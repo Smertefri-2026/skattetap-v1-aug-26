@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/design-system";
 import { stageLabels, stageOrder, statusLabels, statusTones } from "@/lib/cases/labels";
+import type { DocumentationSummary } from "@/lib/cases/documentationSummary";
 import type { Case } from "@/lib/cases/types";
 
 const nextStepCopy: Record<string, { label: string; cta: string }> = {
@@ -22,7 +23,15 @@ const nextStepCopy: Record<string, { label: string; cta: string }> = {
   },
 };
 
-export function CaseContextPanel({ caseData, activeStage }: { caseData: Case; activeStage: string }) {
+export function CaseContextPanel({
+  caseData,
+  activeStage,
+  documentation,
+}: {
+  caseData: Case;
+  activeStage: string;
+  documentation: DocumentationSummary;
+}) {
   const activeIndex = stageOrder.indexOf(activeStage as (typeof stageOrder)[number]);
   const next = nextStepCopy[activeStage];
 
@@ -68,9 +77,34 @@ export function CaseContextPanel({ caseData, activeStage }: { caseData: Case; ac
         <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
           Dokumentasjon
         </p>
-        <p className="mt-3 text-[13px] text-ink-soft">
-          Ingen dokumenter lastet opp ennå.
-        </p>
+        {documentation.documentCount === 0 ? (
+          <p className="mt-3 text-[13px] text-ink-soft">
+            Ingen dokumenter lastet opp ennå.
+          </p>
+        ) : (
+          <dl className="mt-3 flex flex-col gap-1.5 text-[13px]">
+            <div className="flex justify-between">
+              <dt className="text-ink-soft">Dokumenter</dt>
+              <dd className="font-medium text-ink">{documentation.documentCount}</dd>
+            </div>
+            {documentation.extractingCount > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-ink-soft">Under analyse</dt>
+                <dd className="font-medium text-ink">{documentation.extractingCount}</dd>
+              </div>
+            )}
+            {documentation.failedCount > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-danger-ink">Feilet</dt>
+                <dd className="font-medium text-danger-ink">{documentation.failedCount}</dd>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <dt className="text-ink-soft">Fakta identifisert</dt>
+              <dd className="font-medium text-ink">{documentation.claimCount}</dd>
+            </div>
+          </dl>
+        )}
       </section>
 
       <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">

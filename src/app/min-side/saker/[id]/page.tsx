@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { CaseContextPanel } from "@/components/cases/CaseContextPanel";
 import { CaseWorkbenchPlaceholder } from "@/components/cases/CaseWorkbenchPlaceholder";
 import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
+import { getDocumentationSummary } from "@/lib/cases/documentationSummary";
 import { stageOrder } from "@/lib/cases/labels";
 import type { Case, CaseStage } from "@/lib/cases/types";
 import { createClient } from "@/lib/supabase/server";
@@ -30,6 +31,7 @@ export default async function CaseWorkspacePage({
   if (!caseData) notFound();
 
   const activeStage: CaseStage = isStage(steg) ? steg : caseData.stage;
+  const documentation = await getDocumentationSummary(supabase, caseData.id);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
@@ -43,7 +45,11 @@ export default async function CaseWorkspacePage({
             <CaseWorkbenchPlaceholder stage={activeStage} />
           )}
         </div>
-        <CaseContextPanel caseData={caseData} activeStage={activeStage} />
+        <CaseContextPanel
+          caseData={caseData}
+          activeStage={activeStage}
+          documentation={documentation}
+        />
       </div>
     </main>
   );
