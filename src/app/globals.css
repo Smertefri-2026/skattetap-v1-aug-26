@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+:root {
+  /* Surfaces */
+  --color-page: #f7f9fc;
+  --color-surface: #ffffff;
+  --color-surface-alt: #eef3f9;
+
+  /* Borders */
+  --color-border: #e1e7ef;
+  --color-border-strong: #cbd5e1;
+
+  /* Text */
+  --color-ink: #101828;
+  --color-ink-soft: #475467;
+  --color-ink-faint: #8d97a8;
+
+  /* Primary */
+  --color-primary: #2f6fed;
+  --color-primary-ink: #1d4fbe;
+  --color-primary-subtle: #eaf1fe;
+
+  /* Semantic */
+  --color-success: #12b76a;
+  --color-success-subtle: #ecfdf3;
+  --color-success-ink: #067647;
+
+  --color-warning: #f79009;
+  --color-warning-subtle: #fffaeb;
+  --color-warning-ink: #b54708;
+
+  --color-danger: #d92d20;
+  --color-danger-subtle: #fef3f2;
+  --color-danger-ink: #b42318;
+
+  --color-neutral-subtle: #f1f3f6;
+  --color-neutral-ink: #475467;
+  --color-neutral-border: #d7dce3;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 4px 14px rgba(16, 24, 40, 0.07);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@theme inline {
+  --color-page: var(--color-page);
+  --color-surface: var(--color-surface);
+  --color-surface-alt: var(--color-surface-alt);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-ink-faint: var(--color-ink-faint);
+  --color-primary: var(--color-primary);
+  --color-primary-ink: var(--color-primary-ink);
+  --color-primary-subtle: var(--color-primary-subtle);
+  --color-success: var(--color-success);
+  --color-success-subtle: var(--color-success-subtle);
+  --color-success-ink: var(--color-success-ink);
+  --color-warning: var(--color-warning);
+  --color-warning-subtle: var(--color-warning-subtle);
+  --color-warning-ink: var(--color-warning-ink);
+  --color-danger: var(--color-danger);
+  --color-danger-subtle: var(--color-danger-subtle);
+  --color-danger-ink: var(--color-danger-ink);
+  --color-neutral-subtle: var(--color-neutral-subtle);
+  --color-neutral-ink: var(--color-neutral-ink);
+  --color-neutral-border: var(--color-neutral-border);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans), -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+input,
+textarea,
+select,
+button {
+  max-width: 100%;
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+  font-weight: 650;
+}
