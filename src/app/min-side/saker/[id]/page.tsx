@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CaseContextPanel } from "@/components/cases/CaseContextPanel";
 import { CaseWorkbenchPlaceholder } from "@/components/cases/CaseWorkbenchPlaceholder";
+import { FullCheckWorkbench } from "@/components/cases/FullCheckWorkbench";
 import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
 import { getDocumentationSummary } from "@/lib/cases/documentationSummary";
 import { stageOrder } from "@/lib/cases/labels";
@@ -39,9 +40,9 @@ export default async function CaseWorkspacePage({
 
       <div className="mt-8 flex flex-col gap-8 lg:flex-row">
         <div className="flex-1">
-          {activeStage === "enkel-sjekk" ? (
-            <SimpleCheckWorkbench caseData={caseData} />
-          ) : (
+          {activeStage === "enkel-sjekk" && <SimpleCheckWorkbench caseData={caseData} />}
+          {activeStage === "full-sjekk" && <FullCheckWorkbench caseData={caseData} />}
+          {activeStage !== "enkel-sjekk" && activeStage !== "full-sjekk" && (
             <CaseWorkbenchPlaceholder stage={activeStage} />
           )}
         </div>

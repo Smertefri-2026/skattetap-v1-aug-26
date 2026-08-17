@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { MinSideTabs } from "@/components/min-side/MinSideTabs";
 import { CasesTab } from "@/components/min-side/CasesTab";
+import { DocumentationTab } from "@/components/min-side/DocumentationTab";
 import { EmptyTab } from "@/components/min-side/EmptyTab";
 import { ProfileTab } from "@/components/min-side/ProfileTab";
+import { ReportsTab } from "@/components/min-side/ReportsTab";
 
 export const metadata: Metadata = {
   title: "Min side",
@@ -28,18 +30,8 @@ export default async function MinSidePage({
       <MinSideTabs active={tab} />
       <div className="pt-8">
         {tab === "saker" && <CasesTab />}
-        {tab === "dokumentasjon" && (
-          <EmptyTab
-            title="Dokumentasjon"
-            body="Dokumenter fra alle sakene dine vises her når du har lastet opp noe."
-          />
-        )}
-        {tab === "rapporter" && (
-          <EmptyTab
-            title="Rapporter"
-            body="Enkle sjekker, fulle rapporter, skatteendringer og utredninger samles her etter hvert som de genereres."
-          />
-        )}
+        {tab === "dokumentasjon" && <DocumentationTab />}
+        {tab === "rapporter" && <ReportsTab />}
         {tab === "kjop" && (
           <EmptyTab
             title="Kjøp"
