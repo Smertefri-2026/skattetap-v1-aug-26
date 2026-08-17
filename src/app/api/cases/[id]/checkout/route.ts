@@ -33,7 +33,7 @@ export async function POST(
   const returnPath = `/min-side/saker/${caseId}`;
 
   try {
-    const url = await createCheckoutSession(supabase, {
+    const url = await createCheckoutSession({
       caseId,
       userId: user.id,
       productCode: parsed.data.productCode,

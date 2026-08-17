@@ -1,5 +1,5 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { getUpgradeQuote } from "@/lib/products/entitlement";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripeClient } from "@/lib/stripe/client";
 
 const PENDING_REUSE_WINDOW_MS = 30 * 60 * 1000;
@@ -18,15 +18,28 @@ export interface CreateCheckoutInput {
  * from the last 30 minutes instead of piling up abandoned Stripe sessions
  * every time a user reloads the purchase button (duplicate-payment
  * defense).
+ *
+ * Uses the service-role client throughout: the caller (the checkout API
+ * route) has already verified the requesting user owns the case, and
+ * `purchases` intentionally has no update policy for the authenticated role
+ * (only the webhook may transition a purchase's status) -- so this
+ * trusted, already-authorized server-side flow needs the admin client to do
+ * its own bookkeeping writes, like stamping the Stripe session id.
  */
-export async function createCheckoutSession(
-  supabase: SupabaseClient,
-  input: CreateCheckoutInput
-): Promise<string> {
+export async function createCheckoutSession(input: CreateCheckoutInput): Promise<string> {
+  const supabase = createAdminClient();
   const quote = await getUpgradeQuote(supabase, input.caseId, input.productCode);
   if (!quote) throw new Error("Ukjent produkt.");
   if (quote.alreadyHasAccess) {
     throw new Error("Du har allerede tilgang til dette nivået eller høyere.");
+  }
+  // Case-scoped, one-time checkout is all this flow implements today. A
+  // future Skattetap+ subscription is account-scoped and recurring, which
+  // needs its own checkout mode and its own (not yet built) entitlement
+  // table -- this guard is the explicit point where that branches off,
+  // instead of this flow silently mishandling a recurring/account product.
+  if (quote.product.price_type !== "one_time" || quote.product.scope !== "case") {
+    throw new Error("Dette produktet støttes ikke i denne kjøpsflyten ennå.");
   }
 
   const stripe = getStripeClient();

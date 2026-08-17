@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { getCaseEntitlement, getUpgradeQuote, hasAccess } from "./entitlement";
 
 const PRODUCTS = [
-  { product_code: "full-sjekk", name: "Full sjekk", price_kr: 599, sort_order: 1, stripe_product_id: null, stripe_price_id: null, active: true },
-  { product_code: "skatteendring", name: "Skatteendring", price_kr: 1490, sort_order: 2, stripe_product_id: null, stripe_price_id: null, active: true },
-  { product_code: "komplett-sak", name: "Komplett sak", price_kr: 9990, sort_order: 3, stripe_product_id: null, stripe_price_id: null, active: true },
+  { product_code: "full-sjekk", name: "Full sjekk", price_kr: 599, sort_order: 1, stripe_product_id: null, stripe_price_id: null, active: true, price_type: "one_time" as const, billing_interval: null, scope: "case" as const },
+  { product_code: "skatteendring", name: "Skatteendring", price_kr: 1490, sort_order: 2, stripe_product_id: null, stripe_price_id: null, active: true, price_type: "one_time" as const, billing_interval: null, scope: "case" as const },
+  { product_code: "komplett-sak", name: "Komplett sak", price_kr: 9990, sort_order: 3, stripe_product_id: null, stripe_price_id: null, active: true, price_type: "one_time" as const, billing_interval: null, scope: "case" as const },
 ];
 
 function makeFakeSupabase(caseAccessRows: { product_code: string }[]) {
