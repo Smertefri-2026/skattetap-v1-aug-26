@@ -1,73 +1,58 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Badge } from "@/components/design-system";
+import { getProducts } from "@/lib/products/catalog";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Priser",
   description: "Enkel sjekk er alltid gratis. Du betaler først når du går videre.",
 };
 
-const tiers = [
-  {
-    name: "Enkel sjekk",
-    price: "Gratis",
-    desc: "Rask førstevurdering av saken din, uten dokumentopplasting.",
-    highlight: true,
-  },
-  {
-    name: "Full sjekk",
-    price: "Pris fastsettes",
-    desc: "Full dokumentanalyse, strukturert rapport og PDF.",
-    highlight: false,
-  },
-  {
-    name: "Skatteendring",
-    price: "Pris fastsettes",
-    desc: "Hjelp til å formulere og følge opp henvendelsen til Skatteetaten.",
-    highlight: false,
-  },
-  {
-    name: "Utredning",
-    price: "Pris fastsettes",
-    desc: "Utvidet analysegrunnlag for større eller mer sammensatte saker.",
-    highlight: false,
-  },
-];
+const descriptions: Record<string, string> = {
+  "full-sjekk": "Full dokumentanalyse: fakta, tidslinje, regelverk og en strukturert rapport som PDF.",
+  skatteendring: "KI-en bygger et ferdig grunnlag for henvendelsen til Skatteetaten, klart til gjennomsyn.",
+  "komplett-sak": "AI setter sammen hele saksmappen: kronologi, bevis, dokumentkoblinger og dokumentasjonshull på tvers av alle dokumenter.",
+  "strategisk-utredning": "Den mest avanserte analysen systemet kan produsere -- på tvers av dokumenter, år og regelverk, med flere strategiske vinkler.",
+};
 
-export default function PriserPage() {
+export default async function PriserPage() {
+  const supabase = await createClient();
+  const products = await getProducts(supabase);
+
   return (
     <main className="mx-auto max-w-4xl px-6 py-20">
       <h1 className="text-3xl font-semibold text-ink">Priser</h1>
       <p className="mt-4 max-w-xl text-[15.5px] text-ink-soft">
-        Du starter alltid gratis. Betaling kommer først når du selv velger å
-        gå videre til neste steg — og du betaler kun for det du faktisk
-        bruker.
+        Du starter alltid gratis. Hvert nivå du kjøper gir en dypere KI-analyse
+        av saken din -- ikke bare flere funksjoner. Oppgraderer du senere,
+        betaler du kun mellomlegget.
       </p>
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2">
-        {tiers.map((tier) => (
+        <div className="rounded-lg border border-primary bg-primary-subtle p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[16px] font-semibold text-ink">Enkel sjekk</h2>
+            <Badge tone="info">Gratis</Badge>
+          </div>
+          <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink-soft">
+            Rask KI-vurdering av saken din, uten dokumentopplasting.
+          </p>
+        </div>
+
+        {products.map((product) => (
           <div
-            key={tier.name}
-            className={
-              tier.highlight
-                ? "rounded-lg border border-primary bg-primary-subtle p-6"
-                : "rounded-lg border border-border bg-surface p-6 shadow-sm"
-            }
+            key={product.product_code}
+            className="rounded-lg border border-border bg-surface p-6 shadow-sm"
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-[16px] font-semibold text-ink">
-                {tier.name}
-              </h2>
-              {tier.highlight ? (
-                <Badge tone="info">{tier.price}</Badge>
-              ) : (
-                <span className="text-[13px] font-medium text-ink-faint">
-                  {tier.price}
-                </span>
-              )}
+              <h2 className="text-[16px] font-semibold text-ink">{product.name}</h2>
+              <span className="text-[13px] font-medium text-ink-faint">
+                {product.price_kr.toLocaleString("no-NO")} kr
+              </span>
             </div>
             <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink-soft">
-              {tier.desc}
+              {descriptions[product.product_code] ?? ""}
             </p>
           </div>
         ))}
