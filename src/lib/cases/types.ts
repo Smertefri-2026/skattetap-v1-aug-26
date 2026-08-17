@@ -6,6 +6,8 @@ export interface Case {
   title: string;
   tax_period: string | null;
   tax_type: string;
+  amount_kr: number | null;
+  description: string | null;
   stage: CaseStage;
   status: CaseStatus;
   created_at: string;

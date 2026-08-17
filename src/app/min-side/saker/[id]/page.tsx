@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CaseContextPanel } from "@/components/cases/CaseContextPanel";
 import { CaseWorkbenchPlaceholder } from "@/components/cases/CaseWorkbenchPlaceholder";
+import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
 import { stageOrder } from "@/lib/cases/labels";
 import type { Case, CaseStage } from "@/lib/cases/types";
 import { createClient } from "@/lib/supabase/server";
@@ -36,7 +37,11 @@ export default async function CaseWorkspacePage({
 
       <div className="mt-8 flex flex-col gap-8 lg:flex-row">
         <div className="flex-1">
-          <CaseWorkbenchPlaceholder stage={activeStage} />
+          {activeStage === "enkel-sjekk" ? (
+            <SimpleCheckWorkbench caseData={caseData} />
+          ) : (
+            <CaseWorkbenchPlaceholder stage={activeStage} />
+          )}
         </div>
         <CaseContextPanel caseData={caseData} activeStage={activeStage} />
       </div>
