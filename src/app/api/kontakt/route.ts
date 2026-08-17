@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { sendEmail } from "@/lib/email";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
 const contactSchema = z.object({
@@ -11,8 +11,7 @@ const contactSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const contactTo = process.env.CONTACT_EMAIL_TO;
-  if (!contactTo || !process.env.TURNSTILE_SECRET_KEY) {
+  if (!process.env.TURNSTILE_SECRET_KEY) {
     return NextResponse.json(
       { error: "Kontaktskjemaet er ikke konfigurert ennå." },
       { status: 503 }
@@ -38,16 +37,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const delivered = await sendEmail({
-    to: contactTo,
-    subject: `Ny henvendelse fra ${name}`,
-    text: `Navn: ${name}\nE-post: ${email}\n\n${message}`,
-    replyTo: email,
-  });
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("contact_messages")
+    .insert({ name, email, message });
 
-  if (!delivered) {
+  if (error) {
     return NextResponse.json(
-      { error: "Kunne ikke sende meldingen. Prøv igjen senere." },
+      { error: "Kunne ikke lagre meldingen. Prøv igjen senere." },
       { status: 502 }
     );
   }

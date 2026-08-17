@@ -1,5 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { POST } from "./route";
+
+const { verifyTurnstileToken } = vi.hoisted(() => ({
+  verifyTurnstileToken: vi.fn(),
+}));
+vi.mock("@/lib/turnstile", () => ({ verifyTurnstileToken }));
+
+const { insert } = vi.hoisted(() => ({
+  insert: vi.fn(() => Promise.resolve({ error: null })),
+}));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({ from: () => ({ insert }) }),
+}));
+
+const { POST } = await import("./route");
 
 function req(body: unknown) {
   return new Request("http://localhost/api/kontakt", {
@@ -18,11 +31,10 @@ const validBody = {
 describe("POST /api/kontakt", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
-  it("svarer 503 når kontaktskjemaet ikke er konfigurert", async () => {
-    vi.stubEnv("CONTACT_EMAIL_TO", "");
+  it("svarer 503 når Turnstile ikke er konfigurert", async () => {
     vi.stubEnv("TURNSTILE_SECRET_KEY", "");
 
     const res = await POST(req(validBody));
@@ -30,10 +42,31 @@ describe("POST /api/kontakt", () => {
   });
 
   it("svarer 400 på ugyldig utfylling", async () => {
-    vi.stubEnv("CONTACT_EMAIL_TO", "post@example.com");
     vi.stubEnv("TURNSTILE_SECRET_KEY", "secret");
 
     const res = await POST(req({ name: "", email: "ikke-epost", message: "" }));
     expect(res.status).toBe(400);
+  });
+
+  it("svarer 400 når Turnstile ikke bekrefter mennesket", async () => {
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "secret");
+    verifyTurnstileToken.mockResolvedValue(false);
+
+    const res = await POST(req(validBody));
+    expect(res.status).toBe(400);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("lagrer meldingen i Supabase når alt er gyldig", async () => {
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "secret");
+    verifyTurnstileToken.mockResolvedValue(true);
+
+    const res = await POST(req(validBody));
+    expect(res.status).toBe(200);
+    expect(insert).toHaveBeenCalledWith({
+      name: validBody.name,
+      email: validBody.email,
+      message: validBody.message,
+    });
   });
 });
