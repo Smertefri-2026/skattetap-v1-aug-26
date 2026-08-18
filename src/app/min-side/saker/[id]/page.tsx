@@ -4,6 +4,7 @@ import { CaseWorkbenchPlaceholder } from "@/components/cases/CaseWorkbenchPlaceh
 import { FullCheckWorkbench } from "@/components/cases/FullCheckWorkbench";
 import { PurchaseGate } from "@/components/cases/PurchaseGate";
 import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
+import { SkatteendringWorkbench } from "@/components/cases/SkatteendringWorkbench";
 import { getDocumentationSummary } from "@/lib/cases/documentationSummary";
 import { stageOrder } from "@/lib/cases/labels";
 import type { Case, CaseStage } from "@/lib/cases/types";
@@ -51,9 +52,16 @@ export default async function CaseWorkspacePage({
               <FullCheckWorkbench caseData={caseData} />
             </PurchaseGate>
           )}
-          {activeStage !== "enkel-sjekk" && activeStage !== "full-sjekk" && (
-            <CaseWorkbenchPlaceholder stage={activeStage} />
+          {activeStage === "skatteendring" && (
+            <PurchaseGate
+              caseId={caseData.id}
+              productCode="skatteendring"
+              checkoutPending={checkout === "success"}
+            >
+              <SkatteendringWorkbench caseData={caseData} />
+            </PurchaseGate>
           )}
+          {activeStage === "utredning" && <CaseWorkbenchPlaceholder stage={activeStage} />}
         </div>
         <CaseContextPanel
           caseData={caseData}

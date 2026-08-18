@@ -18,11 +18,27 @@ export interface FullCheckReportContent {
   recommended_next_steps: string[];
 }
 
-export interface Report {
+export interface SkatteendringReportContent {
+  proposal_text: string;
+  reasoning: string;
+  referenced_documents: { document_id: string; filename: string; relevance: string }[];
+  attachments: string[];
+  missing_information: string[];
+  applicable_rules: {
+    rule_code: string;
+    law_reference: string;
+    provision: string;
+    short_explanation: string;
+  }[];
+}
+
+export type ReportContent = FullCheckReportContent | SkatteendringReportContent;
+
+export interface Report<T extends ReportContent = FullCheckReportContent> {
   id: string;
   case_id: string;
-  type: "full-sjekk";
-  content: FullCheckReportContent;
+  type: "full-sjekk" | "skatteendring";
+  content: T;
   model: string;
   created_at: string;
 }

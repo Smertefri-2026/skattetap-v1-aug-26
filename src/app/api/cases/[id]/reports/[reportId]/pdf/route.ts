@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/requireUser";
 import { renderFullCheckReportPdf } from "@/lib/reports/renderReportPdf";
+import { renderSkatteendringPdf } from "@/lib/reports/renderSkatteendringPdf";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
@@ -22,7 +23,7 @@ export async function GET(
 
   const { data: report } = await supabase
     .from("reports")
-    .select("content")
+    .select("type, content")
     .eq("id", reportId)
     .eq("case_id", caseId)
     .single();
@@ -30,12 +31,15 @@ export async function GET(
     return NextResponse.json({ error: "Fant ikke rapporten." }, { status: 404 });
   }
 
-  const pdfBytes = await renderFullCheckReportPdf(caseRow.title, report.content);
+  const pdfBytes =
+    report.type === "skatteendring"
+      ? await renderSkatteendringPdf(caseRow.title, report.content)
+      : await renderFullCheckReportPdf(caseRow.title, report.content);
 
   return new NextResponse(Buffer.from(pdfBytes), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="full-sjekk-${caseId}.pdf"`,
+      "Content-Disposition": `attachment; filename="${report.type}-${caseId}.pdf"`,
     },
   });
 }
