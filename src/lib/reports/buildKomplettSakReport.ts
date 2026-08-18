@@ -6,6 +6,7 @@ import { analyzeStrategicSynthesis } from "@/lib/ai/komplettSak/strategicSynthes
 import { indexClaims, type IndexedClaim } from "@/lib/ai/komplettSak/shared";
 import { getCaseFacts } from "@/lib/cases/caseFacts";
 import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
+import { computeChangesSinceLast } from "./computeChangesSinceLast";
 import type { KomplettSakReportContent, Report, RuleReference } from "./types";
 
 const MODEL = "gpt-4.1-mini";
@@ -24,6 +25,10 @@ export async function buildKomplettSakReport(
     .eq("id", caseId)
     .single();
   if (caseError || !caseRow) throw new Error("Fant ikke saken.");
+
+  // Computed against whatever is currently the latest report -- must run
+  // before this generation's own insert, or it would diff against itself.
+  const changesSinceLast = await computeChangesSinceLast(supabase, caseId);
 
   const [claimsWithStatus, facts, { data: documents }, { data: taxRules }, { data: latestResponse }] =
     await Promise.all([
@@ -136,6 +141,7 @@ export async function buildKomplettSakReport(
   });
 
   const content: KomplettSakReportContent = {
+    changes_since_last: changesSinceLast,
     case_summary: synthesis.case_summary,
     user_explanation: caseRow.description,
     chronology: chronologyConflicts.chronology,

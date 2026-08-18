@@ -12,6 +12,19 @@ export async function renderKomplettSakPdf(
     "Utvidet analyse fra Skattetap. Skiller mellom dokumenterte fakta, brukerens forklaring, KI-vurderinger og skatterettslige vurderinger. Ikke en juridisk konklusjon."
   );
 
+  if (content.changes_since_last.has_previous) {
+    w.heading("Nytt siden forrige analyse");
+    const c = content.changes_since_last;
+    const items = [
+      ...c.new_documents.map((d) => `Nytt dokument: ${d}`),
+      ...c.new_gaps.map((g) => `Nytt hull: ${g}`),
+      ...c.resolved_gaps.map((g) => `Løst hull: ${g}`),
+      ...c.new_conflicts.map((x) => `Ny konflikt: ${x}`),
+      ...c.changed_assessments.map((x) => `Endret vurdering: ${x}`),
+    ];
+    w.bulletList(items, "Ingen endringer siden forrige analyse.");
+  }
+
   w.heading("Sammendrag");
   w.paragraph(content.case_summary);
 

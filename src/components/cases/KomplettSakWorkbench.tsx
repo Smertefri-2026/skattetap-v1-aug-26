@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DocumentationGapsList } from "./DocumentationGapsList";
 import { GenerateKomplettSakButton } from "./GenerateKomplettSakButton";
 import type { Case } from "@/lib/cases/types";
 import { komplettSakStateFromReport } from "@/lib/reports/reportQueries";
@@ -8,14 +9,21 @@ import { createClient } from "@/lib/supabase/server";
 export async function KomplettSakWorkbench({ caseData }: { caseData: Case }) {
   const supabase = await createClient();
 
-  const { data: latestReport } = await supabase
-    .from("reports")
-    .select("*")
-    .eq("case_id", caseData.id)
-    .eq("type", "komplett-sak")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: latestReport }, { data: gaps }] = await Promise.all([
+    supabase
+      .from("reports")
+      .select("*")
+      .eq("case_id", caseData.id)
+      .eq("type", "komplett-sak")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("documentation_gaps")
+      .select("id, description, suggested_action, status")
+      .eq("case_id", caseData.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -43,6 +51,15 @@ export async function KomplettSakWorkbench({ caseData }: { caseData: Case }) {
             latestReport as Report<KomplettSakReportContent> | null
           )}
         />
+      </section>
+
+      <section>
+        <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
+          Dokumentasjonshull
+        </p>
+        <div className="mt-3">
+          <DocumentationGapsList caseId={caseData.id} gaps={gaps ?? []} />
+        </div>
       </section>
     </div>
   );

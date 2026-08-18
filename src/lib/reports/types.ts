@@ -29,7 +29,18 @@ export interface SkatteendringReportContent {
   applicable_rules: RuleReference[];
 }
 
+export interface ChangesSinceLast {
+  has_previous: boolean;
+  previous_generated_at: string | null;
+  new_documents: string[];
+  new_gaps: string[];
+  resolved_gaps: string[];
+  new_conflicts: string[];
+  changed_assessments: string[];
+}
+
 export interface KomplettSakReportContent {
+  changes_since_last: ChangesSinceLast;
   case_summary: string;
   user_explanation: string | null;
   chronology: {

@@ -1,5 +1,5 @@
 import { Badge } from "@/components/design-system";
-import type { Report, KomplettSakReportContent } from "@/lib/reports/types";
+import type { ChangesSinceLast, Report, KomplettSakReportContent } from "@/lib/reports/types";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -22,6 +22,52 @@ function BulletList({ items, empty }: { items: string[]; empty: string }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+function ChangesSinceLastSection({ changes }: { changes: ChangesSinceLast }) {
+  if (!changes.has_previous) {
+    return (
+      <div className="rounded-md bg-surface-alt p-4">
+        <p className="text-[13px] text-ink-soft">Dette er den første analysen av saken.</p>
+      </div>
+    );
+  }
+
+  const rows: { label: string; items: string[] }[] = [
+    { label: "Nye dokumenter", items: changes.new_documents },
+    { label: "Nye dokumentasjonshull", items: changes.new_gaps },
+    { label: "Løste dokumentasjonshull", items: changes.resolved_gaps },
+    { label: "Nye konflikter oppdaget", items: changes.new_conflicts },
+    { label: "Endrede vurderinger", items: changes.changed_assessments },
+  ].filter((row) => row.items.length > 0);
+
+  return (
+    <div className="rounded-md border border-primary bg-primary-subtle p-4">
+      <p className="text-[11.5px] font-semibold uppercase tracking-wide text-primary-ink">
+        Nytt siden forrige analyse
+      </p>
+      {rows.length === 0 ? (
+        <p className="mt-2 text-[13px] text-primary-ink">
+          Ingen endringer siden forrige analyse -- saken er analysert på nytt likevel.
+        </p>
+      ) : (
+        <div className="mt-2 flex flex-col gap-2">
+          {rows.map((row) => (
+            <div key={row.label}>
+              <p className="text-[12.5px] font-semibold text-primary-ink">{row.label}</p>
+              <ul className="mt-1 flex flex-col gap-0.5">
+                {row.items.map((item) => (
+                  <li key={item} className="text-[13px] text-primary-ink">
+                    • {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -58,6 +104,8 @@ export function KomplettSakReportView({
           </a>
         </div>
       </div>
+
+      <ChangesSinceLastSection changes={c.changes_since_last} />
 
       <Section title="Sammendrag">
         <p className="text-[13.5px] text-ink">{c.case_summary}</p>
