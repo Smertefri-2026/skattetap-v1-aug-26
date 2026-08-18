@@ -12,13 +12,15 @@ export const RESPONSE_INTERPRETATION_INSTRUCTIONS = [
 
 const responseInterpretationSchema = z.object({
   summary_plain_language: z.string().min(1).max(1200),
-  documented_findings: z.array(z.string().max(300)).max(8),
-  legal_assessments: z.array(z.string().max(300)).max(8),
-  assumptions: z.array(z.string().max(300)).max(8),
-  unanswered_points: z.array(z.string().max(300)).max(8),
-  new_documentation_needs: z.array(z.string().max(300)).max(8),
-  suggested_next_steps: z.array(z.string().max(300)).max(6),
-  detected_outcome: z.enum(["ukjent", "medhold", "delvis_medhold", "avslag", "trukket_avsluttet"]),
+  documented_findings: z.array(z.string().max(300)).max(8).catch([]),
+  legal_assessments: z.array(z.string().max(300)).max(8).catch([]),
+  assumptions: z.array(z.string().max(300)).max(8).catch([]),
+  unanswered_points: z.array(z.string().max(300)).max(8).catch([]),
+  new_documentation_needs: z.array(z.string().max(300)).max(8).catch([]),
+  suggested_next_steps: z.array(z.string().max(300)).max(6).catch([]),
+  detected_outcome: z
+    .enum(["ukjent", "medhold", "delvis_medhold", "avslag", "trukket_avsluttet"])
+    .catch("ukjent"),
 });
 
 export type ResponseInterpretation = z.infer<typeof responseInterpretationSchema>;

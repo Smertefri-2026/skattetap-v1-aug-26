@@ -33,7 +33,7 @@ describe("interpretSkatteetatenResponse", () => {
     expect(result.detected_outcome).toBe("medhold");
   });
 
-  it("kaster hvis KI-svaret har et ugyldig utfall", async () => {
+  it("faller konservativt tilbake til 'ukjent' hvis KI-en oppgir et ugyldig utfall, i stedet for å kaste", async () => {
     callAiChatJson.mockImplementation(({ validate }) =>
       validate({
         summary_plain_language: "x",
@@ -44,6 +44,23 @@ describe("interpretSkatteetatenResponse", () => {
         new_documentation_needs: [],
         suggested_next_steps: [],
         detected_outcome: "sannsynlig-medhold",
+      })
+    );
+
+    const result = await interpretSkatteetatenResponse(baseInput);
+    expect(result.detected_outcome).toBe("ukjent");
+  });
+
+  it("kaster fortsatt hvis selve sammendraget mangler (ingen trygg standardverdi for det)", async () => {
+    callAiChatJson.mockImplementation(({ validate }) =>
+      validate({
+        documented_findings: [],
+        legal_assessments: [],
+        assumptions: [],
+        unanswered_points: [],
+        new_documentation_needs: [],
+        suggested_next_steps: [],
+        detected_outcome: "ukjent",
       })
     );
 

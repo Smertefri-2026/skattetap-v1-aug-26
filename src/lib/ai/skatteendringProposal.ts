@@ -14,10 +14,10 @@ export const SKATTEENDRING_PROPOSAL_INSTRUCTIONS = [
 const skatteendringProposalSchema = z.object({
   proposal_text: z.string().min(1).max(4000),
   reasoning: z.string().min(1).max(1500),
-  referenced_document_filenames: z.array(z.string()).max(10),
-  attachments: z.array(z.string().max(200)).max(10),
-  missing_information: z.array(z.string().max(200)).max(8),
-  relevant_rule_codes: z.array(z.string()).max(6),
+  referenced_document_filenames: z.array(z.string()).max(10).catch([]),
+  attachments: z.array(z.string().max(200)).max(10).catch([]),
+  missing_information: z.array(z.string().max(200)).max(8).catch([]),
+  relevant_rule_codes: z.array(z.string()).max(6).catch([]),
 });
 
 export type SkatteendringProposal = z.infer<typeof skatteendringProposalSchema>;
@@ -31,6 +31,10 @@ export interface SkatteendringProposalInput {
   documentedClaims: string[];
   documentFilenames: string[];
   availableRules: { rule_code: string; topic: string; short_explanation: string }[];
+  /** Case summary + strongest points from an existing Komplett sak analysis,
+   * if the case has one -- lets Skatteendring build on that deeper analysis
+   * instead of starting from claims alone. */
+  komplettSakContext?: string | null;
 }
 
 function buildPrompt(input: SkatteendringProposalInput): string {
@@ -47,6 +51,9 @@ function buildPrompt(input: SkatteendringProposalInput): string {
     "",
     `Dokumenter i saken: ${input.documentFilenames.join(", ") || "ingen"}`,
     "",
+    ...(input.komplettSakContext
+      ? [`Grunnlag fra tidligere Komplett sak-analyse: ${input.komplettSakContext}`, ""]
+      : []),
     "Tilgjengelig regelverk (bruk KUN disse rule_code-verdiene hvis relevant):",
     ...input.availableRules.map((r) => `- ${r.rule_code}: ${r.topic} -- ${r.short_explanation}`),
     "",

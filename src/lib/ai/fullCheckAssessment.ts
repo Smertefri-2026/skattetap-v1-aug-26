@@ -16,10 +16,10 @@ const fullCheckAssessmentSchema = z.object({
   summary: z.string().min(1).max(800),
   background: z.string().min(1).max(1000),
   assessment: z.string().min(1).max(1200),
-  relevant_rule_codes: z.array(z.string()).max(6),
-  conflicting_notes: z.array(z.string().max(300)).max(6),
-  documentation_gaps: z.array(z.string().max(200)).max(8),
-  recommended_next_steps: z.array(z.string().max(200)).max(6),
+  relevant_rule_codes: z.array(z.string()).max(6).catch([]),
+  conflicting_notes: z.array(z.string().max(300)).max(6).catch([]),
+  documentation_gaps: z.array(z.string().max(200)).max(8).catch([]),
+  recommended_next_steps: z.array(z.string().max(200)).max(6).catch([]),
 });
 
 export type FullCheckAssessment = z.infer<typeof fullCheckAssessmentSchema>;

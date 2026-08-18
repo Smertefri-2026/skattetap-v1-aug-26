@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { CaseContextPanel } from "@/components/cases/CaseContextPanel";
 import { CaseWorkbenchPlaceholder } from "@/components/cases/CaseWorkbenchPlaceholder";
 import { FullCheckWorkbench } from "@/components/cases/FullCheckWorkbench";
+import { KomplettSakWorkbench } from "@/components/cases/KomplettSakWorkbench";
 import { PurchaseGate } from "@/components/cases/PurchaseGate";
 import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
 import { SkatteendringWorkbench } from "@/components/cases/SkatteendringWorkbench";
@@ -61,7 +62,18 @@ export default async function CaseWorkspacePage({
               <SkatteendringWorkbench caseData={caseData} />
             </PurchaseGate>
           )}
-          {activeStage === "utredning" && <CaseWorkbenchPlaceholder stage={activeStage} />}
+          {activeStage === "komplett-sak" && (
+            <PurchaseGate
+              caseId={caseData.id}
+              productCode="komplett-sak"
+              checkoutPending={checkout === "success"}
+            >
+              <KomplettSakWorkbench caseData={caseData} />
+            </PurchaseGate>
+          )}
+          {activeStage === "strategisk-utredning" && (
+            <CaseWorkbenchPlaceholder stage={activeStage} />
+          )}
         </div>
         <CaseContextPanel
           caseData={caseData}

@@ -12,9 +12,9 @@ export const SIMPLE_CHECK_INSTRUCTIONS = [
 
 const simpleCheckResultSchema = z.object({
   understood_summary: z.string().min(1).max(600),
-  things_to_investigate: z.array(z.string().min(1).max(200)).max(6),
-  missing_information: z.array(z.string().min(1).max(200)).max(6),
-  full_check_recommended: z.boolean(),
+  things_to_investigate: z.array(z.string().min(1).max(200)).max(6).catch([]),
+  missing_information: z.array(z.string().min(1).max(200)).max(6).catch([]),
+  full_check_recommended: z.boolean().catch(false),
   full_check_reasoning: z.string().min(1).max(400),
 });
 

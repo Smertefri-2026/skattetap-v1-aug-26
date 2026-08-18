@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/requireUser";
-import { renderKomplettSakPdf } from "@/lib/reports/renderKomplettSakPdf";
-import { renderFullCheckReportPdf } from "@/lib/reports/renderReportPdf";
-import { renderSkatteendringPdf } from "@/lib/reports/renderSkatteendringPdf";
 import { createClient } from "@/lib/supabase/server";
 
+/**
+ * Machine-readable export of a generated report -- the "saksmappe" is
+ * meant to be usable outside Skattetap too (handed to an external advisor,
+ * archived, fed into Skatteendring/Strategisk utredning later), not
+ * locked into the PDF's fixed layout.
+ */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string; reportId: string }> }
@@ -15,7 +18,7 @@ export async function GET(
   const supabase = await createClient();
   const { data: caseRow } = await supabase
     .from("cases")
-    .select("id, title, user_id")
+    .select("id, user_id")
     .eq("id", caseId)
     .single();
   if (!caseRow || caseRow.user_id !== user.id) {
@@ -24,7 +27,7 @@ export async function GET(
 
   const { data: report } = await supabase
     .from("reports")
-    .select("type, content")
+    .select("type, content, created_at")
     .eq("id", reportId)
     .eq("case_id", caseId)
     .single();
@@ -32,17 +35,10 @@ export async function GET(
     return NextResponse.json({ error: "Fant ikke rapporten." }, { status: 404 });
   }
 
-  const pdfBytes =
-    report.type === "skatteendring"
-      ? await renderSkatteendringPdf(caseRow.title, report.content)
-      : report.type === "komplett-sak"
-        ? await renderKomplettSakPdf(caseRow.title, report.content)
-        : await renderFullCheckReportPdf(caseRow.title, report.content);
-
-  return new NextResponse(Buffer.from(pdfBytes), {
+  return new NextResponse(JSON.stringify(report, null, 2), {
     headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${report.type}-${caseId}.pdf"`,
+      "Content-Type": "application/json",
+      "Content-Disposition": `attachment; filename="${report.type}-${caseId}.json"`,
     },
   });
 }

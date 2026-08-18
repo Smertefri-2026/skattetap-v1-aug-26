@@ -5,14 +5,16 @@ export const stageLabels: Record<CaseStage, string> = {
   "enkel-sjekk": "Enkel sjekk",
   "full-sjekk": "Full sjekk",
   skatteendring: "Skatteendring",
-  utredning: "Utredning",
+  "komplett-sak": "Komplett sak",
+  "strategisk-utredning": "Strategisk utredning",
 };
 
 export const stageOrder: CaseStage[] = [
   "enkel-sjekk",
   "full-sjekk",
   "skatteendring",
-  "utredning",
+  "komplett-sak",
+  "strategisk-utredning",
 ];
 
 export const statusLabels: Record<CaseStatus, string> = {

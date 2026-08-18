@@ -1,4 +1,9 @@
-export type CaseStage = "enkel-sjekk" | "full-sjekk" | "skatteendring" | "utredning";
+export type CaseStage =
+  | "enkel-sjekk"
+  | "full-sjekk"
+  | "skatteendring"
+  | "komplett-sak"
+  | "strategisk-utredning";
 export type CaseStatus = "apen" | "under_arbeid" | "fullfort" | "arkivert";
 
 export interface Case {

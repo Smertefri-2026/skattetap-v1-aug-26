@@ -31,13 +31,21 @@ describe("analyzeDocument", () => {
     expect(result.possible_facts).toHaveLength(1);
   });
 
-  it("kaster hvis KI-svaret ikke følger skjemaet", async () => {
+  it("faller tilbake til trygge standardverdier i stedet for å kaste, selv om KI-svaret er ufullstendig", async () => {
+    // Documented bug this guards against: a real document with no amounts
+    // caused the model to omit the "amounts" key entirely (per the old
+    // "utelat felt du ikke finner grunnlag for" instruction), which crashed
+    // the whole extraction. .catch() on every field means malformed or
+    // missing fields degrade to a safe empty/neutral result instead.
     callAiChatJson.mockImplementation(({ validate }) =>
       validate({ document_type: "ikke-en-gyldig-type" })
     );
 
-    await expect(
-      analyzeDocument({ fileName: "x.pdf", extractedText: "..." })
-    ).rejects.toThrow();
+    const result = await analyzeDocument({ fileName: "x.pdf", extractedText: "..." });
+
+    expect(result.document_type).toBe("annet");
+    expect(result.amounts).toEqual([]);
+    expect(result.parties).toEqual([]);
+    expect(result.possible_facts).toEqual([]);
   });
 });

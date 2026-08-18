@@ -16,11 +16,28 @@ export async function buildSkatteendringReport(
     .single();
   if (caseError || !caseRow) throw new Error("Fant ikke saken.");
 
-  const [claims, { data: documents }, { data: taxRules }] = await Promise.all([
+  const [claims, { data: documents }, { data: taxRules }, { data: komplettSak }] = await Promise.all([
     getClaimsWithStatus(supabase, caseId),
     supabase.from("documents").select("id, original_filename").eq("case_id", caseId),
     supabase.from("tax_rules").select("rule_code, law_reference, provision, topic, short_explanation"),
+    supabase
+      .from("reports")
+      .select("content")
+      .eq("case_id", caseId)
+      .eq("type", "komplett-sak")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+
+  const komplettSakContent = komplettSak?.content as
+    | { case_summary?: string; strongest_points?: string[] }
+    | undefined;
+  const komplettSakContext = komplettSakContent
+    ? [komplettSakContent.case_summary, ...(komplettSakContent.strongest_points ?? [])]
+        .filter(Boolean)
+        .join(" ")
+    : null;
 
   const documentedClaims = claims.filter((c) => c.status === "documented").map((c) => c.statement);
   const documentFilenames = (documents ?? []).map((d) => d.original_filename);
@@ -38,6 +55,7 @@ export async function buildSkatteendringReport(
       topic: r.topic,
       short_explanation: r.short_explanation,
     })),
+    komplettSakContext,
   });
 
   const filenameToId = new Map((documents ?? []).map((d) => [d.original_filename, d.id]));

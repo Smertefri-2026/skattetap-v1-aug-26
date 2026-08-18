@@ -17,9 +17,13 @@ const nextStepCopy: Record<string, { label: string; cta: string }> = {
     label: "Formuler henvendelsen til Skatteetaten basert på rapporten.",
     cta: "Fortsett skatteendring",
   },
-  utredning: {
-    label: "Samle alt grunnlaget til en utvidet utredning.",
-    cta: "Fortsett utredning",
+  "komplett-sak": {
+    label: "Bygg en dypere analyse med kronologi, konfliktdeteksjon og komplett saksmappe.",
+    cta: "Fortsett komplett sak",
+  },
+  "strategisk-utredning": {
+    label: "Den mest avanserte analysen -- på tvers av dokumenter, år og regelverk.",
+    cta: "Fortsett strategisk utredning",
   },
 };
 
