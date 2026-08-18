@@ -79,15 +79,60 @@ export interface KomplettSakReportContent {
   recommended_next_steps: string[];
 }
 
+export interface DeadlineAssessmentSummary {
+  case_title: string;
+  status: "vurdert" | "ikke_vurdert";
+  deadline_date: string | null;
+  deadline_type: string | null;
+  source: string | null;
+  exceptions: { condition: string; effect: string }[];
+  note: string;
+}
+
+export interface StrategiskUtredningReportContent {
+  included_cases: {
+    case_id: string;
+    title: string;
+    tax_period: string | null;
+    tax_type: string;
+    is_primary: boolean;
+  }[];
+  user_explanations: { case_title: string; explanation: string }[];
+  documented_facts_overview: { case_title: string; facts: string[] }[];
+  documentation_gaps_overview: { case_title: string; gaps: string[] }[];
+  patterns: { description: string; case_titles: string[]; pattern_type: string }[];
+  comparisons: { dimension: string; description: string; case_titles: string[] }[];
+  deadlines: DeadlineAssessmentSummary[];
+  financial_exposure: {
+    total_amount_kr: number;
+    breakdown_by_case: { case_title: string; amount_kr: number }[];
+  };
+  applicable_rules: RuleReference[];
+  strategies: {
+    name: string;
+    description: string;
+    relevant_cases: string[];
+    strengths: string[];
+    weaknesses: string[];
+    risks: string[];
+    consequences: string[];
+  }[];
+  overall_assessment: string;
+  prioritized_cases: { case_title: string; reasoning: string }[];
+  assumptions: string[];
+  recommended_next_steps: string[];
+}
+
 export type ReportContent =
   | FullCheckReportContent
   | SkatteendringReportContent
-  | KomplettSakReportContent;
+  | KomplettSakReportContent
+  | StrategiskUtredningReportContent;
 
 export interface Report<T extends ReportContent = FullCheckReportContent> {
   id: string;
   case_id: string;
-  type: "full-sjekk" | "skatteendring" | "komplett-sak";
+  type: "full-sjekk" | "skatteendring" | "komplett-sak" | "strategisk-utredning";
   content: T;
   model: string;
   created_at: string;

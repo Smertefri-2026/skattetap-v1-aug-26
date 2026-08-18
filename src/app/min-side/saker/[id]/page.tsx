@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { CaseContextPanel } from "@/components/cases/CaseContextPanel";
-import { CaseWorkbenchPlaceholder } from "@/components/cases/CaseWorkbenchPlaceholder";
 import { FullCheckWorkbench } from "@/components/cases/FullCheckWorkbench";
 import { KomplettSakWorkbench } from "@/components/cases/KomplettSakWorkbench";
 import { PurchaseGate } from "@/components/cases/PurchaseGate";
 import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
 import { SkatteendringWorkbench } from "@/components/cases/SkatteendringWorkbench";
+import { StrategiskUtredningWorkbench } from "@/components/cases/StrategiskUtredningWorkbench";
 import { getDocumentationSummary } from "@/lib/cases/documentationSummary";
 import { stageOrder } from "@/lib/cases/labels";
 import type { Case, CaseStage } from "@/lib/cases/types";
@@ -72,7 +72,13 @@ export default async function CaseWorkspacePage({
             </PurchaseGate>
           )}
           {activeStage === "strategisk-utredning" && (
-            <CaseWorkbenchPlaceholder stage={activeStage} />
+            <PurchaseGate
+              caseId={caseData.id}
+              productCode="strategisk-utredning"
+              checkoutPending={checkout === "success"}
+            >
+              <StrategiskUtredningWorkbench caseData={caseData} />
+            </PurchaseGate>
           )}
         </div>
         <CaseContextPanel

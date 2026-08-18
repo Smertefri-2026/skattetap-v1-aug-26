@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth/requireUser";
 import { renderKomplettSakPdf } from "@/lib/reports/renderKomplettSakPdf";
 import { renderFullCheckReportPdf } from "@/lib/reports/renderReportPdf";
 import { renderSkatteendringPdf } from "@/lib/reports/renderSkatteendringPdf";
+import { renderStrategiskUtredningPdf } from "@/lib/reports/renderStrategiskUtredningPdf";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
@@ -32,12 +33,20 @@ export async function GET(
     return NextResponse.json({ error: "Fant ikke rapporten." }, { status: 404 });
   }
 
-  const pdfBytes =
-    report.type === "skatteendring"
-      ? await renderSkatteendringPdf(caseRow.title, report.content)
-      : report.type === "komplett-sak"
-        ? await renderKomplettSakPdf(caseRow.title, report.content)
-        : await renderFullCheckReportPdf(caseRow.title, report.content);
+  let pdfBytes: Uint8Array;
+  switch (report.type) {
+    case "skatteendring":
+      pdfBytes = await renderSkatteendringPdf(caseRow.title, report.content);
+      break;
+    case "komplett-sak":
+      pdfBytes = await renderKomplettSakPdf(caseRow.title, report.content);
+      break;
+    case "strategisk-utredning":
+      pdfBytes = await renderStrategiskUtredningPdf(caseRow.title, report.content);
+      break;
+    default:
+      pdfBytes = await renderFullCheckReportPdf(caseRow.title, report.content);
+  }
 
   return new NextResponse(Buffer.from(pdfBytes), {
     headers: {

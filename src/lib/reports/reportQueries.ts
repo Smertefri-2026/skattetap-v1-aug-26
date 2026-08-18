@@ -1,7 +1,13 @@
 import type { FullCheckReportState } from "./reportActions";
 import type { KomplettSakReportState } from "./komplettSakActions";
 import type { SkatteendringReportState } from "./skatteendringActions";
-import type { KomplettSakReportContent, Report, SkatteendringReportContent } from "./types";
+import type { StrategiskUtredningReportState } from "./strategiskUtredningActions";
+import type {
+  KomplettSakReportContent,
+  Report,
+  SkatteendringReportContent,
+  StrategiskUtredningReportContent,
+} from "./types";
 
 export function fullCheckStateFromReport(
   report: Report | null | undefined
@@ -20,6 +26,13 @@ export function skatteendringStateFromReport(
 export function komplettSakStateFromReport(
   report: Report<KomplettSakReportContent> | null | undefined
 ): (KomplettSakReportState & { status: "success" }) | undefined {
+  if (!report) return undefined;
+  return { status: "success", report };
+}
+
+export function strategiskUtredningStateFromReport(
+  report: Report<StrategiskUtredningReportContent> | null | undefined
+): (StrategiskUtredningReportState & { status: "success" }) | undefined {
   if (!report) return undefined;
   return { status: "success", report };
 }
