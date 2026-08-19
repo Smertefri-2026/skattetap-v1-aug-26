@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type State = "idle" | "submitting" | "sent" | "error";
 
-export function LoginForm() {
+export function MagicLinkForm() {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -44,11 +44,11 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
-        <label htmlFor="email" className="text-[13px] font-medium text-ink">
+        <label htmlFor="magic-email" className="text-[13px] font-medium text-ink">
           E-post
         </label>
         <input
-          id="email"
+          id="magic-email"
           type="email"
           required
           value={email}

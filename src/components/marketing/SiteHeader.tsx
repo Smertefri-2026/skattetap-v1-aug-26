@@ -36,7 +36,7 @@ export function SiteHeader() {
             Logg inn
           </Link>
           <Link
-            href="/logg-inn"
+            href="/logg-inn?tab=registrer"
             className="rounded-md bg-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-primary-ink"
           >
             Start enkel sjekk

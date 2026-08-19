@@ -16,6 +16,13 @@ const columns = [
       { href: "/kontakt", label: "Kontakt" },
     ],
   },
+  {
+    title: "Juridisk",
+    links: [
+      { href: "/vilkar", label: "Vilkår" },
+      { href: "/personvern", label: "Personvern" },
+    ],
+  },
 ];
 
 export function SiteFooter() {
