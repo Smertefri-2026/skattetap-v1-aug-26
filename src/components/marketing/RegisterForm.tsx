@@ -50,7 +50,7 @@ export function RegisterForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/min-side`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/konto-bekreftet`,
         data: {
           first_name: firstName,
           last_name: lastName,
