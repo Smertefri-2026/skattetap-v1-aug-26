@@ -74,8 +74,13 @@ export function RegisterForm() {
       return;
     }
 
-    if (data.user && !data.session) {
-      setState("sent");
+    // Supabase never errors on signUp() for an email that already has an
+    // account -- to avoid leaking which emails are registered, it returns a
+    // fake user object with error: null and session: null instead. The only
+    // reliable signal is an empty identities array.
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      setError("Denne e-posten er allerede registrert. Prøv å logge inn i stedet.");
+      setState("error");
       return;
     }
 

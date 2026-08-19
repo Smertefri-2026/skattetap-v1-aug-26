@@ -9,10 +9,8 @@ type State = "idle" | "submitting" | "error";
 
 export function PasswordLoginForm({
   onForgotPassword,
-  onUseMagicLink,
 }: {
   onForgotPassword: () => void;
-  onUseMagicLink: () => void;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -91,14 +89,6 @@ export function PasswordLoginForm({
       <Button type="submit" disabled={state === "submitting"}>
         {state === "submitting" ? "Logger inn..." : "Logg inn"}
       </Button>
-
-      <button
-        type="button"
-        onClick={onUseMagicLink}
-        className="text-center text-[12.5px] font-medium text-ink-soft hover:text-ink"
-      >
-        Bruk innloggingslenke på e-post i stedet
-      </button>
     </form>
   );
 }
