@@ -22,7 +22,13 @@ export function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
     });
 
     if (authError) {
-      setError("Kunne ikke sende e-post. Prøv igjen.");
+      if (authError.code === "over_email_send_rate_limit") {
+        setError(
+          "Det er sendt for mange e-poster nylig. Vent noen minutter og prøv igjen."
+        );
+      } else {
+        setError("Kunne ikke sende e-post. Prøv igjen.");
+      }
       setState("error");
       return;
     }
