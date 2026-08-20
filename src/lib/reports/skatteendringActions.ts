@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/requireUser";
 import { hasAccess } from "@/lib/products/entitlement";
 import { createClient } from "@/lib/supabase/server";
@@ -36,6 +37,11 @@ export async function generateSkatteendringReport(
 
   try {
     const report = await buildSkatteendringReport(supabase, caseId);
+    // useActionState updates this component's own state, but doesn't
+    // re-fetch the parent Server Component's data (e.g. the status banner
+    // computed from latestReport at page load) -- without this, the page
+    // would keep showing the pre-generation status until a hard reload.
+    revalidatePath(`/min-side/saker/${caseId}`);
     return { status: "success", report };
   } catch {
     return { status: "error", error: "Kunne ikke generere forslaget. Prøv igjen." };

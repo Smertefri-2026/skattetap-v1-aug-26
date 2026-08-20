@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/requireUser";
 import { createClient } from "@/lib/supabase/server";
 import { buildFullCheckReport } from "./buildFullCheckReport";
@@ -31,6 +32,12 @@ export async function generateFullCheckReport(
 
   try {
     const report = await buildFullCheckReport(supabase, caseId);
+    // useActionState updates this component's own state, but doesn't
+    // re-fetch the parent Server Component's data (documents, claims,
+    // rapporthistorikk, EvidenceStatsGrid's regelkoblinger-tall) -- without
+    // this, the page would keep showing pre-generation data until a hard
+    // reload.
+    revalidatePath(`/min-side/saker/${caseId}`);
     return { status: "success", report };
   } catch {
     return { status: "error", error: "Kunne ikke generere rapporten. Prøv igjen." };

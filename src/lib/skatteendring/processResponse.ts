@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { interpretSkatteetatenResponse } from "@/lib/ai/skatteetatenResponseInterpretation";
 import { processDocumentUpload } from "@/lib/documents/processUpload";
+import { refreshNextAction } from "@/lib/cases/refreshNextAction";
 
 const MODEL = "gpt-4.1-mini";
 
@@ -74,6 +75,22 @@ export async function processSkatteetatenResponse(
       .update({ outcome: interpretation.detected_outcome })
       .eq("id", input.caseId);
   }
+
+  // Skatteetatens egne dokumentasjonskrav går inn i den samme
+  // documentation_gaps-arbeidslisten som resten av saken bruker -- ikke en
+  // separat liste bare synlig inne i dette svaret -- slik at de dukker opp
+  // i Levende saksbilde, Min saksbehandler og next_action som alt annet.
+  for (const need of interpretation.new_documentation_needs) {
+    await supabase.from("documentation_gaps").insert({
+      case_id: input.caseId,
+      description: need,
+      suggested_action: need,
+      importance: "Etterspurt av Skatteetaten i svar på henvendelsen.",
+      source_document_id: uploadResult.documentId,
+    });
+  }
+
+  await refreshNextAction(supabase, input.caseId);
 
   return { documentId: uploadResult.documentId, interpreted: true, rejectionReason: null };
 }

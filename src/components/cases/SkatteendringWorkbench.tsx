@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { GenerateSkatteendringButton } from "./GenerateSkatteendringButton";
+import { SkatteendringStatusBanner } from "./SkatteendringStatusBanner";
 import { SkatteetatenResponseUploadForm } from "./SkatteetatenResponseUploadForm";
 import { SkatteetatenResponsesList } from "./SkatteetatenResponsesList";
 import type { Case } from "@/lib/cases/types";
 import { skatteendringStateFromReport } from "@/lib/reports/reportQueries";
+import { computeSkatteendringStatus } from "@/lib/skatteendring/status";
 import type { Report, SkatteendringReportContent } from "@/lib/reports/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,6 +28,14 @@ export async function SkatteendringWorkbench({ caseData }: { caseData: Case }) {
       .order("created_at", { ascending: false }),
   ]);
 
+  const latestResponse = responses?.[0] ?? null;
+  const status = computeSkatteendringStatus({
+    hasProposal: latestReport != null,
+    latestResponse: latestResponse
+      ? { newDocumentationNeeds: latestResponse.interpretation.new_documentation_needs }
+      : null,
+  });
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -41,6 +51,8 @@ export async function SkatteendringWorkbench({ caseData }: { caseData: Case }) {
           Se grunnlaget i Full sjekk
         </Link>
       </div>
+
+      <SkatteendringStatusBanner status={status} />
 
       <section>
         <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/requireUser";
 import { hasAccess } from "@/lib/products/entitlement";
 import { createClient } from "@/lib/supabase/server";
@@ -36,6 +37,10 @@ export async function generateKomplettSakReport(
 
   try {
     const report = await buildKomplettSakReport(supabase, caseId);
+    // useActionState updates this component's own state, but doesn't
+    // re-fetch the parent Server Component's data -- without this, the
+    // page would keep showing pre-generation data until a hard reload.
+    revalidatePath(`/min-side/saker/${caseId}`);
     return { status: "success", report };
   } catch {
     return { status: "error", error: "Kunne ikke generere den komplette saksmappen. Prøv igjen." };
