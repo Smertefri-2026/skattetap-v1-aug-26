@@ -1,51 +1,76 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Badge } from "@/components/design-system";
 
 export const metadata: Metadata = {
   title: "Slik fungerer det",
-  description: "De fire stegene i Skattetap, forklart uten juridisk språk.",
+  description: "Fra første spørsmål til ferdig rapport -- se hva som faktisk skjer når du bruker Skattetap.",
 };
 
-const steps = [
+interface JourneyStep {
+  n: number;
+  title: string;
+  body: string;
+}
+
+interface JourneyGroup {
+  eyebrow: string;
+  steps: JourneyStep[];
+}
+
+const groups: JourneyGroup[] = [
   {
-    n: "1",
-    title: "Enkel sjekk",
-    tone: "info" as const,
-    price: "Gratis",
-    body: [
-      "Du forteller kort hva saken gjelder: hvilket år eller hvilken periode det handler om, hvilken type skatt, og en kort forklaring med egne ord. Har du et dokument for hånden allerede, kan du legge det ved.",
-      "Systemet gir deg en rask, forståelig førstevurdering: hva det har forstått, hvilke forhold som kan være verdt å se nærmere på, og hva som eventuelt mangler for å gå videre. Dette er ikke en juridisk konklusjon — det er et utgangspunkt.",
+    eyebrow: "Kom i gang",
+    steps: [
+      {
+        n: 1,
+        title: "Start med Enkel sjekk",
+        body: "Fortell kort hva saken gjelder -- hvilket år, hvilken type skatt, og en kort forklaring med egne ord. Du får en vurdering med en gang. Helt gratis, og du trenger ingen dokumenter for å komme i gang.",
+      },
+      {
+        n: 2,
+        title: "Saken din opprettes automatisk",
+        body: "Enkel sjekk blir til en egen sak du kan bygge videre på. Alt du legger inn samles ett sted, og du kommer tilbake til den akkurat der du slapp.",
+      },
+      {
+        n: 3,
+        title: "Last opp dokumentene dine",
+        body: "Vedtak, kvitteringer, avtaler, brev -- du bestemmer selv hva som lastes opp, og du kan legge til mer etter hvert som du finner det.",
+      },
     ],
   },
   {
-    n: "2",
-    title: "Full sjekk",
-    tone: "success" as const,
-    price: "Betalt",
-    body: [
-      "Her laster du opp dokumentasjonen din — vedtak, kvitteringer, avtaler, korrespondanse. Systemet leser dokumentene, foreslår hva de viser, og du bekrefter eller korrigerer.",
-      "Alt samles til én strukturert rapport: dokumenterte fakta, usikre forhold, en tidslinje, relevante skatteregler og en tydelig oversikt over hva som eventuelt mangler av dokumentasjon. Rapporten kan lastes ned som PDF.",
+    eyebrow: "Skattetap jobber for deg",
+    steps: [
+      {
+        n: 4,
+        title: "Dokumentasjonen analyseres",
+        body: "Hvert dokument brytes ned til konkrete fakta -- datoer, beløp, påstander -- og sjekkes opp mot det som allerede er kjent i saken. Motsier to dokumenter hverandre, vises det tydelig, med en forklaring. Mangler det noe, sier vi konkret hva.",
+      },
+      {
+        n: 5,
+        title: "Levende saksbilde oppdateres",
+        body: "Alt samles i ett bilde som alltid viser status akkurat nå: hvor mye som er dokumentert, hva som er usikkert, hvilke konflikter som finnes, og hva som gjenstår. Ikke noe du må generere på nytt -- det oppdaterer seg selv etter hvert som saken vokser.",
+      },
+      {
+        n: 6,
+        title: "Min saksbehandler hjelper deg videre",
+        body: "Har du spørsmål underveis? Min saksbehandler kjenner hele saken din -- dokumentene, tidslinjen, konfliktene og hullene -- og svarer direkte, med henvisning til akkurat det som gjelder din sak.",
+      },
     ],
   },
   {
-    n: "3",
-    title: "Skatteendring",
-    tone: "warning" as const,
-    price: "Betalt",
-    body: [
-      "Basert på rapporten hjelper vi deg å formulere en henvendelse til Skatteetaten — for eksempel en anmodning om endring. Du velger hvilke fakta som skal med, legger ved rapporten, og redigerer teksten selv før du sender den.",
-      "Når Skatteetaten svarer, laster du opp svaret i samme steg. Systemet forklarer hva svaret faktisk sier, skiller begrunnelse fra antakelse, og hjelper deg vurdere hva som bør skje videre. Alle versjoner beholdes i historikken.",
-    ],
-  },
-  {
-    n: "4",
-    title: "Utredning",
-    tone: "neutral" as const,
-    price: "Betalt",
-    body: [
-      "For større eller mer sammensatte saker samler utredningen alt som allerede finnes — dokumentasjon, rapport, henvendelser og svar — til ett mer omfattende analysegrunnlag.",
-      "Dette kan senere danne grunnlag for videre profesjonell eller juridisk behandling, men er i seg selv ikke en juridisk konklusjon.",
+    eyebrow: "Du bestemmer tempoet",
+    steps: [
+      {
+        n: 7,
+        title: "Gå videre når du er klar",
+        body: "Full sjekk for en strukturert rapport. Skatteendring for å formulere en henvendelse til Skatteetaten. Komplett sak for en dypere analyse. Strategisk utredning hvis du har flere saker over tid. Du velger selv hvor langt du vil gå -- ingenting tvinger deg videre.",
+      },
+      {
+        n: 8,
+        title: "Rapportene er øyeblikksbilder",
+        body: "Hver rapport du genererer er et øyeblikksbilde av saken slik den så ut akkurat da -- låst, nedlastbar, og alltid tilgjengelig i historikken. Endrer saken seg senere, genererer du bare en ny -- den gamle blir liggende uendret.",
+      },
     ],
   },
 ];
@@ -55,30 +80,36 @@ export default function SlikFungererDetPage() {
     <main className="mx-auto max-w-3xl px-6 py-20">
       <h1 className="text-3xl font-semibold text-ink">Slik fungerer det</h1>
       <p className="mt-4 max-w-xl text-[15.5px] text-ink-soft">
-        Fire steg, i den rekkefølgen du faktisk trenger dem. Du kan stoppe
-        etter hvilket som helst steg — ingenting tvinger deg videre.
+        Fra første spørsmål til ferdig rapport -- se hva som faktisk skjer når du bruker
+        Skattetap.
       </p>
 
-      <div className="mt-12 flex flex-col gap-10">
-        {steps.map((step) => (
-          <div key={step.n} className="flex gap-5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-alt text-[13px] font-semibold text-ink-soft">
-              {step.n}
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-[18px] font-semibold text-ink">
-                  {step.title}
-                </h2>
-                <Badge tone={step.tone}>{step.price}</Badge>
-              </div>
-              {step.body.map((p) => (
-                <p
-                  key={p.slice(0, 20)}
-                  className="mt-2.5 text-[14.5px] leading-relaxed text-ink-soft"
-                >
-                  {p}
-                </p>
+      <div className="mt-12 flex flex-col gap-12">
+        {groups.map((group) => (
+          <div key={group.eyebrow}>
+            <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
+              {group.eyebrow}
+            </p>
+            <div className="mt-5 flex flex-col gap-8">
+              {group.steps.map((step) => (
+                <div key={step.n} className="flex gap-5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-alt text-[13px] font-semibold text-ink-soft">
+                    {step.n}
+                  </div>
+                  <div>
+                    <h2 className="text-[17px] font-semibold text-ink">{step.title}</h2>
+                    <p className="mt-2 text-[14.5px] leading-relaxed text-ink-soft">{step.body}</p>
+                    {step.n === 4 && (
+                      <div className="mt-4 rounded-md border border-primary bg-primary-subtle px-4 py-3">
+                        <p className="text-[12.5px] text-primary-ink">
+                          Dette er kjernen i det vi kaller <span className="font-semibold">Evidence Engine</span>:
+                          systemet gjetter aldri. Det dokumenterer hver påstand til kilden, begrunner hver
+                          vurdering, og sier tydelig fra når noe mangler.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -92,12 +123,20 @@ export default function SlikFungererDetPage() {
         </p>
       </div>
 
-      <Link
-        href="/logg-inn"
-        className="mt-10 inline-flex rounded-md bg-primary px-6 py-3 text-[14.5px] font-semibold text-white hover:bg-primary-ink"
-      >
-        Start enkel sjekk
-      </Link>
+      <div className="mt-10 flex flex-wrap items-center gap-3">
+        <Link
+          href="/logg-inn?tab=registrer"
+          className="inline-flex rounded-md bg-primary px-6 py-3 text-[14.5px] font-semibold text-white hover:bg-primary-ink"
+        >
+          Start enkel sjekk
+        </Link>
+        <Link
+          href="/eksempel"
+          className="inline-flex rounded-md border border-border-strong bg-surface px-6 py-3 text-[14.5px] font-semibold text-ink hover:bg-surface-alt"
+        >
+          Se eksempelrapport
+        </Link>
+      </div>
     </main>
   );
 }
