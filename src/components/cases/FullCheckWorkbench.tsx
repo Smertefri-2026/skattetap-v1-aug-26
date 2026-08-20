@@ -1,18 +1,21 @@
 import { ClaimsList } from "./ClaimsList";
 import { DocumentUploadForm } from "./DocumentUploadForm";
 import { DocumentsList } from "./DocumentsList";
+import { EvidenceStatsGrid } from "./EvidenceStatsGrid";
 import { GenerateReportButton } from "./GenerateReportButton";
 import { ManualClaimForm } from "./ManualClaimForm";
+import { getCaseConflicts } from "@/lib/cases/conflicts";
 import { getCaseFacts } from "@/lib/cases/caseFacts";
 import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
 import type { Case } from "@/lib/cases/types";
 import { fullCheckStateFromReport } from "@/lib/reports/reportQueries";
+import type { Report } from "@/lib/reports/types";
 import { createClient } from "@/lib/supabase/server";
 
 export async function FullCheckWorkbench({ caseData }: { caseData: Case }) {
   const supabase = await createClient();
 
-  const [{ data: documents }, claims, facts, { data: latestReport }] = await Promise.all([
+  const [{ data: documents }, claims, facts, { data: latestReport }, { data: gaps }, conflicts] = await Promise.all([
     supabase
       .from("documents")
       .select("id, original_filename, extraction_status, rejection_reason")
@@ -27,7 +30,14 @@ export async function FullCheckWorkbench({ caseData }: { caseData: Case }) {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase.from("documentation_gaps").select("id, status").eq("case_id", caseData.id),
+    getCaseConflicts(supabase, caseData.id),
   ]);
+
+  const openGapCount = (gaps ?? []).filter((g) => g.status === "open").length;
+  const openConflictCount = conflicts.filter((c) => c.status === "open").length;
+  const ruleCount = latestReport ? (latestReport as Report).content.applicable_rules.length : null;
+  const hasFindings = claims.length > 0 || facts.timeline.length > 0 || facts.amounts.length > 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -37,6 +47,21 @@ export async function FullCheckWorkbench({ caseData }: { caseData: Case }) {
           Last opp dokumentasjon, se hva systemet finner, og bygg en strukturert rapport.
         </p>
       </div>
+
+      {hasFindings && (
+        <EvidenceStatsGrid
+          title="Vi fant dette"
+          subtitle="Basert på det som faktisk er lastet opp og analysert i saken -- ingen antagelser."
+          stats={[
+            { label: "fakta", value: claims.length },
+            { label: "datoer", value: facts.timeline.length },
+            { label: "beløp", value: facts.amounts.length },
+            { label: "dokumentasjonshull", value: openGapCount, tone: openGapCount > 0 ? "warning" : "default" },
+            { label: "konflikter", value: openConflictCount, tone: openConflictCount > 0 ? "warning" : "default" },
+            { label: "regelkoblinger", value: ruleCount ?? "–" },
+          ]}
+        />
+      )}
 
       <section>
         <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
