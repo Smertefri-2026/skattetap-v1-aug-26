@@ -1,4 +1,6 @@
 import { Badge } from "@/components/design-system";
+import { EvidenceStatsGrid } from "./EvidenceStatsGrid";
+import { EvidenceTimeline } from "./EvidenceTimeline";
 import type { ChangesSinceLast, Report, KomplettSakReportContent } from "@/lib/reports/types";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -118,53 +120,66 @@ export function KomplettSakReportView({
       )}
 
       <Section title="Kronologi">
-        {c.chronology.length === 0 ? (
-          <p className="text-[13px] text-ink-faint">Ingen hendelser identifisert ennå.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {c.chronology.map((entry) => (
-              <li key={`${entry.date}-${entry.description}`} className="flex items-start gap-2.5">
-                <Badge tone={sourceTone[entry.source_type]}>{sourceLabel[entry.source_type]}</Badge>
-                <span className="text-[13px] text-ink-soft">
-                  {entry.date ?? "Udatert"} — {entry.description}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <EvidenceTimeline
+          entries={c.chronology.map((entry) => ({
+            key: `${entry.date}-${entry.description}`,
+            date: entry.date,
+            label: entry.description,
+            badge: { tone: sourceTone[entry.source_type], label: sourceLabel[entry.source_type] },
+          }))}
+        />
       </Section>
 
       <Section title="Faktastyrke">
-        {c.fact_strength.length === 0 ? (
-          <p className="text-[13px] text-ink-faint">Ingen fakta vurdert ennå.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {c.fact_strength.map((f) => (
-              <li key={f.statement} className="flex items-start gap-2.5">
-                <Badge tone={strengthTone[f.strength]}>{strengthLabel[f.strength]}</Badge>
-                <span className="text-[13px] text-ink-soft">
-                  {f.statement} — {f.reasoning}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="flex flex-col gap-4">
+          <EvidenceStatsGrid
+            title="Fordeling"
+            stats={[
+              {
+                label: "sterke",
+                value: c.fact_strength.filter((f) => f.strength === "strong").length,
+              },
+              {
+                label: "svake",
+                value: c.fact_strength.filter((f) => f.strength === "weak").length,
+              },
+              {
+                label: "motstridende",
+                value: c.fact_strength.filter((f) => f.strength === "conflicting").length,
+                tone: c.fact_strength.some((f) => f.strength === "conflicting") ? "warning" : "default",
+              },
+            ]}
+          />
+          {c.fact_strength.length === 0 ? (
+            <p className="text-[13px] text-ink-faint">Ingen fakta vurdert ennå.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {c.fact_strength.map((f) => (
+                <li key={f.statement} className="flex items-start gap-2.5">
+                  <Badge tone={strengthTone[f.strength]}>{strengthLabel[f.strength]}</Badge>
+                  <span className="text-[13px] text-ink-soft">
+                    {f.statement} — {f.reasoning}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </Section>
 
       <Section title="Motstridende opplysninger">
         {c.conflicts.length === 0 ? (
           <p className="text-[13px] text-ink-faint">Ingen motsigelser identifisert.</p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             {c.conflicts.map((conflict) => (
-              <li key={conflict.description} className="flex items-start gap-2.5">
+              <div key={conflict.description} className="rounded-md border border-border p-3">
                 <Badge tone={severityTone[conflict.severity]}>{conflict.severity}</Badge>
-                <span className="text-[13px] text-ink-soft">
-                  {conflict.description} ({conflict.statements.join("; ")})
-                </span>
-              </li>
+                <p className="mt-1.5 text-[13px] text-ink-soft">{conflict.description}</p>
+                <p className="mt-1 text-[12px] text-ink-faint">{conflict.statements.join(" · ")}</p>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </Section>
 
