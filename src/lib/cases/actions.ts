@@ -3,15 +3,26 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/requireUser";
+import { stageOrder } from "./labels";
+import type { CaseStage } from "./types";
 import { createClient } from "@/lib/supabase/server";
 
 const createCaseSchema = z.object({
   title: z.string().trim().min(3).max(200),
+  // Optional: set when the case is created from a specific product's
+  // purchase-intent flow (e.g. the homepage's product ladder), so the new
+  // case lands straight on that product's PurchaseGate instead of always
+  // on Enkel sjekk. Invalid/missing values fall back to enkel-sjekk --
+  // never trusted blindly since it arrives as a plain hidden field.
+  steg: z.enum(stageOrder as [CaseStage, ...CaseStage[]]).optional(),
 });
 
 export async function createCase(formData: FormData) {
   const user = await requireUser();
-  const parsed = createCaseSchema.safeParse({ title: formData.get("title") });
+  const parsed = createCaseSchema.safeParse({
+    title: formData.get("title"),
+    steg: formData.get("steg") || undefined,
+  });
 
   if (!parsed.success) {
     redirect("/min-side?tab=saker&feil=ugyldig-tittel");
@@ -28,5 +39,5 @@ export async function createCase(formData: FormData) {
     redirect("/min-side?tab=saker&feil=kunne-ikke-opprette");
   }
 
-  redirect(`/min-side/saker/${data.id}?steg=enkel-sjekk`);
+  redirect(`/min-side/saker/${data.id}?steg=${parsed.data.steg ?? "enkel-sjekk"}`);
 }

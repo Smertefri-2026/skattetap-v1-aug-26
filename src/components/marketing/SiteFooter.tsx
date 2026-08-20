@@ -27,13 +27,13 @@ const columns = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-surface">
+    <footer className="border-t border-white/10 bg-ink">
       <div className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-14 sm:flex-row sm:justify-between">
         <div className="max-w-xs">
-          <p className="text-[15px] font-semibold text-ink">
+          <p className="text-[15px] font-semibold text-white">
             Skattetap<span className="text-primary">.no</span>
           </p>
-          <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
+          <p className="mt-3 text-[13px] leading-relaxed text-white/60">
             Skattetap gir deg en strukturert vurdering av saken din basert på
             dine egne dokumenter. Vi gir ingen juridisk fasit og garanterer
             ikke noe resultat.
@@ -43,7 +43,7 @@ export function SiteFooter() {
         <div className="flex gap-14">
           {columns.map((col) => (
             <div key={col.title}>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">
                 {col.title}
               </p>
               <ul className="mt-3 flex flex-col gap-2">
@@ -51,7 +51,7 @@ export function SiteFooter() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-[13.5px] text-ink-soft hover:text-ink"
+                      className="text-[13.5px] text-white/70 hover:text-white"
                     >
                       {link.label}
                     </Link>
@@ -62,8 +62,8 @@ export function SiteFooter() {
           ))}
         </div>
       </div>
-      <div className="border-t border-border">
-        <div className="mx-auto max-w-5xl px-6 py-5 text-[12px] text-ink-faint">
+      <div className="border-t border-white/10">
+        <div className="mx-auto max-w-5xl px-6 py-5 text-[12px] text-white/40">
           © {new Date().getFullYear()} Skattetap.no
         </div>
       </div>

@@ -6,12 +6,12 @@ import { PasswordLoginForm } from "./PasswordLoginForm";
 
 type Mode = "password" | "forgot-password";
 
-export function LoginPanel() {
+export function LoginPanel({ next }: { next?: string } = {}) {
   const [mode, setMode] = useState<Mode>("password");
 
   if (mode === "forgot-password") {
     return <ForgotPasswordForm onBack={() => setMode("password")} />;
   }
 
-  return <PasswordLoginForm onForgotPassword={() => setMode("forgot-password")} />;
+  return <PasswordLoginForm onForgotPassword={() => setMode("forgot-password")} next={next} />;
 }

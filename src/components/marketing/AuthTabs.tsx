@@ -7,7 +7,7 @@ import { RegisterForm } from "./RegisterForm";
 
 type Tab = "logg-inn" | "registrer";
 
-export function AuthTabs({ initialTab }: { initialTab: Tab }) {
+export function AuthTabs({ initialTab, next }: { initialTab: Tab; next?: string }) {
   const [tab, setTab] = useState<Tab>(initialTab);
 
   return (
@@ -39,7 +39,7 @@ export function AuthTabs({ initialTab }: { initialTab: Tab }) {
         </button>
       </div>
 
-      {tab === "logg-inn" ? <LoginPanel /> : <RegisterForm />}
+      {tab === "logg-inn" ? <LoginPanel next={next} /> : <RegisterForm next={next} />}
     </div>
   );
 }

@@ -15,10 +15,11 @@ const trustPoints = [
 export default async function LoggInnPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; next?: string }>;
 }) {
   const params = await searchParams;
   const initialTab = params.tab === "registrer" ? "registrer" : "logg-inn";
+  const next = params.next && params.next.startsWith("/") ? params.next : undefined;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-24">
@@ -43,7 +44,7 @@ export default async function LoggInnPage({
         </div>
 
         <div>
-          <AuthTabs initialTab={initialTab} />
+          <AuthTabs initialTab={initialTab} next={next} />
         </div>
       </div>
     </main>

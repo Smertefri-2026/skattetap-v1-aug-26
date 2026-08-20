@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/design-system";
+import { BevismotorPipeline } from "@/components/marketing/BevismotorPipeline";
 import { EvidenceEngineShowcase } from "@/components/marketing/EvidenceEngineShowcase";
 import { ProductLadder } from "@/components/marketing/ProductLadder";
 
@@ -60,11 +61,31 @@ export default function Home() {
         </ul>
       </section>
 
+      <section className="mx-auto max-w-4xl px-6 py-16">
+        <p className="text-center text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
+          Slik fungerer det i praksis
+        </p>
+        <h2 className="mt-2 text-center text-2xl font-semibold text-ink">
+          Fra dokument til anbefalt handling
+        </h2>
+        <p className="mx-auto mt-4 max-w-xl text-center text-[15px] text-ink-soft">
+          Du laster opp et dokument. Skattetaps Bevismotor leser det, sjekker det mot det du har
+          oppgitt selv, og viser deg nøyaktig hva som er dokumentert, hva som motsier hverandre,
+          og hva som mangler — før den foreslår neste steg.
+        </p>
+        <div className="mt-10">
+          <BevismotorPipeline />
+        </div>
+      </section>
+
       <section className="border-y border-border bg-surface-alt">
         <div className="mx-auto max-w-4xl px-6 py-16">
-          <p className="text-center text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
-            Evidence Engine
-          </p>
+          <Link
+            href="/om"
+            className="block text-center text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint hover:text-primary"
+          >
+            Skattetaps Bevismotor
+          </Link>
           <h2 className="mt-2 text-center text-2xl font-semibold text-ink">
             Skattetap gjetter aldri
           </h2>

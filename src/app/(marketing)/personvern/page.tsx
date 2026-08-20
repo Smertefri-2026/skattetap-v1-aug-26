@@ -23,15 +23,15 @@ export default function PersonvernPage() {
         <section>
           <h2 className="text-[16px] font-semibold text-ink">1. Behandlingsansvarlig</h2>
           <p className="mt-2">
-            [Skattetap AS, org.nr. XXX XXX XXX, adresse] er
+            PT Tjenester AS, org.nr. 918 917 349, [registrert adresse] er
             behandlingsansvarlig for personopplysningene som beskrives i
             denne erklæringen.
           </p>
           <LegalReviewFlag>
-            Selskapsnavn, organisasjonsnummer og registrert adresse mangler
-            og må fylles inn -- dette er obligatorisk informasjon etter
-            personopplysningsloven/GDPR art. 13, ikke valgfritt. Placeholder
-            satt bevisst i stedet for oppdiktede opplysninger.
+            Registrert adresse mangler og må fylles inn -- dette er
+            obligatorisk informasjon etter personopplysningsloven/GDPR art.
+            13, ikke valgfritt. Placeholder satt bevisst i stedet for
+            oppdiktede opplysninger.
           </LegalReviewFlag>
         </section>
 

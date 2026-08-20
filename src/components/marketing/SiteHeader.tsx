@@ -10,9 +10,9 @@ const navItems = [
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-border bg-surface">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-ink">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-[15px] font-semibold text-ink">
+        <Link href="/" className="text-[15px] font-semibold text-white">
           Skattetap<span className="text-primary">.no</span>
         </Link>
 
@@ -21,7 +21,7 @@ export function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-[13.5px] font-medium text-ink-soft hover:text-ink"
+              className="text-[13.5px] font-medium text-white/70 hover:text-white"
             >
               {item.label}
             </Link>
@@ -31,7 +31,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-3">
           <Link
             href="/logg-inn"
-            className="text-[13.5px] font-semibold text-ink-soft hover:text-ink"
+            className="text-[13.5px] font-semibold text-white/80 hover:text-white"
           >
             Logg inn
           </Link>

@@ -39,8 +39,10 @@ function EyeIcon({ open }: { open: boolean }) {
 
 export function PasswordLoginForm({
   onForgotPassword,
+  next,
 }: {
   onForgotPassword: () => void;
+  next?: string;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -72,7 +74,7 @@ export function PasswordLoginForm({
       return;
     }
 
-    router.push("/min-side");
+    router.push(next && next.startsWith("/") ? next : "/min-side");
     router.refresh();
   }
 

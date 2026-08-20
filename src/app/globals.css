@@ -86,7 +86,10 @@
 html,
 body {
   max-width: 100%;
-  overflow-x: hidden;
+  /* overflow-x: hidden would force overflow-y to auto per spec, which turns
+     html/body into the sticky containing block and breaks `position: sticky`
+     headers. `clip` avoids that (no scroll container is established). */
+  overflow-x: clip;
 }
 
 body {

@@ -3,6 +3,7 @@ import { MinSideTabs } from "@/components/min-side/MinSideTabs";
 import { CasesTab } from "@/components/min-side/CasesTab";
 import { DocumentationTab } from "@/components/min-side/DocumentationTab";
 import { KjopTab } from "@/components/min-side/KjopTab";
+import { ProductIntentBanner } from "@/components/min-side/ProductIntentBanner";
 import { ProfileTab } from "@/components/min-side/ProfileTab";
 import { ReportsTab } from "@/components/min-side/ReportsTab";
 
@@ -20,13 +21,14 @@ function isTab(value: string | undefined): value is Tab {
 export default async function MinSidePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; produkt?: string }>;
 }) {
   const params = await searchParams;
   const tab: Tab = isTab(params.tab) ? params.tab : "saker";
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
+      {params.produkt && <ProductIntentBanner productCode={params.produkt} />}
       <MinSideTabs active={tab} />
       <div className="pt-8">
         {tab === "saker" && <CasesTab />}

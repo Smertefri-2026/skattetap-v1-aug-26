@@ -11,7 +11,7 @@ const inputClass =
   "mt-1.5 w-full rounded-md border border-border-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-primary";
 const labelClass = "text-[13px] font-medium text-ink";
 
-export function RegisterForm() {
+export function RegisterForm({ next }: { next?: string } = {}) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [address, setAddress] = useState("");
@@ -46,12 +46,21 @@ export function RegisterForm() {
 
     setState("submitting");
 
+    // Threaded through two redirect hops (auth/confirm -> konto-bekreftet)
+    // that this form doesn't control, so the intended destination -- e.g.
+    // /min-side?produkt=full-sjekk from the homepage's product ladder --
+    // survives the async email-confirmation gap. Each hop's own next=
+    // param decodes what the previous hop encoded, so this needs exactly
+    // two levels of encodeURIComponent, not one.
+    const confirmNext = next && next.startsWith("/") ? next : "/min-side";
+    const postConfirmPath = `/konto-bekreftet?next=${encodeURIComponent(confirmNext)}`;
+
     const supabase = createClient();
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/confirm?next=/konto-bekreftet`,
+        emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(postConfirmPath)}`,
         data: {
           first_name: firstName,
           last_name: lastName,
