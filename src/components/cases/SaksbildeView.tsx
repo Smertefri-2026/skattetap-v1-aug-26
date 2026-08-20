@@ -1,14 +1,20 @@
+import { Badge } from "@/components/design-system";
 import { ClaimsList } from "./ClaimsList";
 import { CaseTimelineView } from "./CaseTimelineView";
 import { ConflictWorkspace } from "./ConflictWorkspace";
 import { DocumentInsightList } from "./DocumentInsightList";
 import { DocumentUploadForm } from "./DocumentUploadForm";
 import { DocumentationGapsList } from "./DocumentationGapsList";
+import { FinancialPotentialCard, type DocumentAmountRow } from "./FinancialPotentialCard";
 import { NextActionCard } from "./NextActionCard";
+import { ReportHistoryList } from "./ReportHistoryList";
+import { SaksbehandlerCallout } from "./SaksbehandlerCallout";
 import { getCaseConflicts } from "@/lib/cases/conflicts";
 import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
+import { statusLabels, statusTones } from "@/lib/cases/labels";
 import { buildCaseTimeline } from "@/lib/cases/timeline";
 import type { Case } from "@/lib/cases/types";
+import { getCaseEntitlement } from "@/lib/products/entitlement";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -24,7 +30,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function SaksbildeView({ caseData }: { caseData: Case }) {
   const supabase = await createClient();
 
-  const [{ data: documents }, claims, { data: gaps }, conflicts] = await Promise.all([
+  const [{ data: documents }, claims, { data: gaps }, conflicts, entitlement, { data: reports }] = await Promise.all([
     supabase
       .from("documents")
       .select("id, original_filename, extraction_status, rejection_reason, ai_extraction, case_analysis")
@@ -37,6 +43,12 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
       .eq("case_id", caseData.id)
       .order("created_at", { ascending: false }),
     getCaseConflicts(supabase, caseData.id),
+    getCaseEntitlement(supabase, caseData.id),
+    supabase
+      .from("reports")
+      .select("id, type, created_at")
+      .eq("case_id", caseData.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const timeline = await buildCaseTimeline(supabase, caseData.id, caseData.tax_period);
@@ -51,20 +63,27 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
     affected_claim_statement: g.claim_id ? (claimStatementById.get(g.claim_id) ?? null) : null,
   }));
 
+  const documentAmounts: DocumentAmountRow[] = (documents ?? []).flatMap((d) => {
+    const extraction = d.ai_extraction as { amounts?: { label: string; amount_kr: number }[] } | null;
+    return (extraction?.amounts ?? []).map((a) => ({
+      documentFileName: d.original_filename as string,
+      label: a.label,
+      amountKr: a.amount_kr,
+    }));
+  });
+
   return (
     <div className="flex flex-col gap-8">
-      <NextActionCard
-        caseId={caseData.id}
-        stage={caseData.stage}
-        action={caseData.next_action}
-        reasoning={caseData.next_action_reasoning}
-        actionType={caseData.next_action_type}
-      />
-
       <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
-        <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
-          Saken akkurat nå
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
+            Saken akkurat nå
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={statusTones[caseData.status]}>{statusLabels[caseData.status]}</Badge>
+            <Badge tone="info">{entitlement ? entitlement.name : "Enkel sjekk (gratis)"}</Badge>
+          </div>
+        </div>
         <div className="mt-3 flex flex-wrap gap-6">
           <div>
             <p className="text-[20px] font-semibold text-ink">{documented}</p>
@@ -86,6 +105,18 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
           </div>
         </div>
       </section>
+
+      <NextActionCard
+        caseId={caseData.id}
+        stage={caseData.stage}
+        action={caseData.next_action}
+        reasoning={caseData.next_action_reasoning}
+        actionType={caseData.next_action_type}
+      />
+
+      <SaksbehandlerCallout caseId={caseData.id} />
+
+      <FinancialPotentialCard userStatedAmountKr={caseData.amount_kr} documentAmounts={documentAmounts} />
 
       <section id="dokumenter">
         <h2 className="text-[16px] font-semibold text-ink">Dokumenter</h2>
@@ -126,6 +157,16 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
         <h2 className="text-[16px] font-semibold text-ink">Dokumentasjonshull</h2>
         <div className="mt-4">
           <DocumentationGapsList caseId={caseData.id} gaps={gapsWithClaimContext} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-[16px] font-semibold text-ink">Rapporthistorikk</h2>
+        <div className="mt-4">
+          <ReportHistoryList
+            caseId={caseData.id}
+            reports={(reports ?? []).map((r) => ({ id: r.id, type: r.type, createdAt: r.created_at }))}
+          />
         </div>
       </section>
     </div>
