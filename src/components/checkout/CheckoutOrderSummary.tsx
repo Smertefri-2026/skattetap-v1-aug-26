@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Button } from "@/components/design-system";
+import { useEffect, useRef, useState } from "react";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import type { Product } from "@/lib/products/types";
+import { StripePaymentElementBox } from "./StripePaymentElementBox";
 
 const ANGRERETT_TEXT =
   "Jeg ønsker at SkatteTap starter behandlingen av saken min med en gang, før angrefristen på 14 dager er utløpt. Jeg forstår at jeg ved bruk av angreretten etter at arbeidet har startet kan måtte betale for den delen av tjenesten som allerede er levert, og at angreretten bortfaller når tjenesten er fullstendig levert.";
+
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 function Line({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
@@ -22,14 +27,119 @@ function kr(n: number) {
 }
 
 /**
+ * Owns the clientSecret fetch for exactly one case+product combination.
+ * The parent remounts this via `key={caseId:productCode}` whenever either
+ * changes, instead of manually resetting state inside an effect (which
+ * React's own lint rules flag as a footgun -- a fresh mount already starts
+ * with fresh state, so there's nothing to reset).
+ */
+function PaymentIntentPanel({
+  caseId,
+  productCode,
+  angrerettAccepted,
+  returnUrl,
+}: {
+  caseId: string;
+  productCode: string;
+  angrerettAccepted: boolean;
+  returnUrl: string;
+}) {
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(true);
+  const [prepError, setPrepError] = useState<string | null>(null);
+  // Guards against React StrictMode's dev-only double-invoke of this
+  // effect: without it, two concurrent requests can both pass the
+  // server's "reuse a pending purchase" check before either has
+  // committed its insert, creating two purchase rows/PaymentIntents for
+  // the same case+product. Survives across the fresh mount this ref is
+  // created in -- a genuine case/product change gets a new mounted
+  // instance entirely via the parent's key={caseId:productCode}, so this
+  // never suppresses a legitimate re-fetch.
+  const fetchStarted = useRef(false);
+
+  useEffect(() => {
+    if (fetchStarted.current) return;
+    fetchStarted.current = true;
+
+    let cancelled = false;
+
+    fetch(`/api/cases/${caseId}/payment-intent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productCode }),
+    })
+      .then(async (res) => {
+        const body = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok) {
+          setPrepError(body.error ?? "Kunne ikke klargjøre betaling.");
+          return;
+        }
+        setClientSecret(body.clientSecret);
+      })
+      .catch(() => {
+        if (!cancelled) setPrepError("Kunne ikke klargjøre betaling.");
+      })
+      .finally(() => {
+        if (!cancelled) setPreparing(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [caseId, productCode]);
+
+  return (
+    <>
+      {prepError && <p className="text-[13px] text-danger-ink">{prepError}</p>}
+
+      {preparing && <p className="text-[13px] text-ink-faint">Klargjør sikkert betalingsfelt...</p>}
+
+      {clientSecret && stripePromise && (
+        <Elements
+          stripe={stripePromise}
+          options={{
+            clientSecret,
+            appearance: {
+              theme: "stripe",
+              variables: {
+                colorPrimary: "#2f6fed",
+                colorBackground: "#ffffff",
+                colorText: "#101828",
+                colorDanger: "#d92d20",
+                fontFamily: "inherit",
+                borderRadius: "8px",
+              },
+            },
+          }}
+        >
+          <StripePaymentElementBox
+            caseId={caseId}
+            productCode={productCode}
+            angrerettAccepted={angrerettAccepted}
+            returnUrl={returnUrl}
+          />
+        </Elements>
+      )}
+    </>
+  );
+}
+
+/**
  * Column 3. Always represents a paid product -- /utsjekk redirects
  * enkel-sjekk elsewhere before this ever renders (see the page
  * component). Pricing is never recomputed here -- product.price_kr and
  * costKr both come straight from the server's getUpgradeQuote() call
  * (see the page component); this only formats/derives display lines
- * ("tidligere kjøpt verdi" = price_kr - costKr) and handles the angrerett
- * checkbox + the same fetch-and-redirect-to-Stripe call PurchasePrompt
- * already makes.
+ * ("tidligere kjøpt verdi" = price_kr - costKr).
+ *
+ * Payment is embedded (Stripe Payment Element), not a redirect -- pattern
+ * adapted from PresseSjekk's own /utsjekk: fetch a PaymentIntent
+ * clientSecret as soon as a case is selected, mount <Elements> around
+ * StripePaymentElementBox once it arrives. automatic_payment_methods on
+ * the server side (createPaymentIntent.ts) means whatever methods show up
+ * here (card, Klarna, ...) are exactly what Stripe's own account
+ * configuration actually supports -- nothing hardcoded in this UI.
  */
 export function CheckoutOrderSummary({
   isLoggedIn,
@@ -47,33 +157,16 @@ export function CheckoutOrderSummary({
   costKr?: number;
 }) {
   const [angrerettAccepted, setAngrerettAccepted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function handlePayment() {
-    if (!caseId || !product) return;
-    setLoading(true);
-    setError(null);
-
-    const res = await fetch(`/api/cases/${caseId}/checkout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productCode: product.product_code, angrerettAccepted: true }),
-    });
-
-    if (res.ok) {
-      const { url } = await res.json();
-      window.location.href = url;
-    } else {
-      const body = await res.json().catch(() => ({}));
-      setError(body.error ?? "Kunne ikke starte betaling. Prøv igjen.");
-      setLoading(false);
-    }
-  }
+  const productCode = product?.product_code;
 
   const priceKr = product?.price_kr ?? 0;
   const payingNow = costKr ?? priceKr;
   const previouslyPaidValue = priceKr - payingNow;
+  const returnUrl =
+    typeof window !== "undefined" && caseId
+      ? `${window.location.origin}/min-side/saker/${caseId}?checkout=success`
+      : "";
 
   return (
     <div className="flex flex-col gap-4">
@@ -99,7 +192,7 @@ export function CheckoutOrderSummary({
         </div>
       )}
 
-      {isLoggedIn && caseId && !alreadyHasAccess && (
+      {isLoggedIn && caseId && productCode && !alreadyHasAccess && (
         <>
           <label className="flex items-start gap-2.5 text-[12.5px] leading-relaxed text-ink-soft">
             <input
@@ -118,13 +211,16 @@ export function CheckoutOrderSummary({
             (punkt 7, angrerett).
           </p>
 
-          {error && <p className="text-[13px] text-danger-ink">{error}</p>}
+          <PaymentIntentPanel
+            key={`${caseId}:${productCode}`}
+            caseId={caseId}
+            productCode={productCode}
+            angrerettAccepted={angrerettAccepted}
+            returnUrl={returnUrl}
+          />
 
-          <Button onClick={handlePayment} disabled={!angrerettAccepted || loading} className="mt-1">
-            {loading ? "Starter betaling..." : "Gå til betaling"}
-          </Button>
           <p className="text-[12px] text-ink-faint">
-            SkatteTap lagrer ikke kortopplysningene dine. Betaling håndteres av Stripe.
+            SkatteTap lagrer ikke kortopplysningene dine. Betalingsopplysninger håndteres av Stripe.
           </p>
         </>
       )}

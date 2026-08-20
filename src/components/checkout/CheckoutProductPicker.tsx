@@ -41,13 +41,13 @@ export function CheckoutProductPicker({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label htmlFor="checkout-product-select" className="text-[13px] font-medium text-ink">
+        <label htmlFor="checkout-product-select" className="sr-only">
           Pakke
         </label>
         <select
           id="checkout-product-select"
           defaultValue={selected}
-          className="mt-1.5 w-full rounded-md border border-border-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-primary sm:hidden"
+          className="w-full rounded-md border border-border-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-primary sm:hidden"
           onChange={(e) => {
             window.location.href = `/utsjekk?produkt=${e.target.value}${sak ? `&sak=${sak}` : ""}`;
           }}
