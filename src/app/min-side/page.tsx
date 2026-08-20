@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MinSideTabs } from "@/components/min-side/MinSideTabs";
 import { CasesTab } from "@/components/min-side/CasesTab";
 import { DocumentationTab } from "@/components/min-side/DocumentationTab";
-import { EmptyTab } from "@/components/min-side/EmptyTab";
+import { KjopTab } from "@/components/min-side/KjopTab";
 import { ProfileTab } from "@/components/min-side/ProfileTab";
 import { ReportsTab } from "@/components/min-side/ReportsTab";
 
@@ -32,12 +32,7 @@ export default async function MinSidePage({
         {tab === "saker" && <CasesTab />}
         {tab === "dokumentasjon" && <DocumentationTab />}
         {tab === "rapporter" && <ReportsTab />}
-        {tab === "kjop" && (
-          <EmptyTab
-            title="Kjøp"
-            body="Kjøpshistorikk, kvitteringer og tilgang vises her når du har kjøpt noe."
-          />
-        )}
+        {tab === "kjop" && <KjopTab />}
         {tab === "profil" && <ProfileTab />}
       </div>
     </main>

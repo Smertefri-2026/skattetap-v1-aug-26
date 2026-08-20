@@ -6,7 +6,7 @@ const tabs = [
   { key: "dokumentasjon", label: "Dokumentasjon" },
   { key: "rapporter", label: "Rapporter" },
   { key: "kjop", label: "Kjøp" },
-  { key: "profil", label: "Profil" },
+  { key: "profil", label: "Min konto" },
 ] as const;
 
 export function MinSideTabs({ active }: { active: string }) {
