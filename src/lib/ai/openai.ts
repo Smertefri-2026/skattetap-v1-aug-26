@@ -60,6 +60,10 @@ async function withRetry<T>(
 export interface ChatJsonOptions {
   systemPrompt: string;
   userPrompt: string;
+  /** Prior turns of a multi-turn conversation, inserted between the system
+   * prompt and the final user prompt. Omitted entirely for the normal
+   * single-shot engines -- only chat-style engines need this. */
+  history?: { role: "user" | "assistant"; content: string }[];
   model?: string;
   temperature?: number;
 }
@@ -70,7 +74,14 @@ export async function callAiChatJson<T>(
   options: ChatJsonOptions & { validate: (value: unknown) => T }
 ): Promise<T> {
   const client = getOpenAiClient();
-  const { systemPrompt, userPrompt, model = "gpt-4.1-mini", temperature = 0.2, validate } = options;
+  const {
+    systemPrompt,
+    userPrompt,
+    history = [],
+    model = "gpt-4.1-mini",
+    temperature = 0.2,
+    validate,
+  } = options;
 
   const completion = await withRetry(
     (signal) =>
@@ -81,6 +92,7 @@ export async function callAiChatJson<T>(
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: systemPrompt },
+            ...history,
             { role: "user", content: userPrompt },
           ],
         },

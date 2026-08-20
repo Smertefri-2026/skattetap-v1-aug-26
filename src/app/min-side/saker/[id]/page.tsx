@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CaseContextPanel } from "@/components/cases/CaseContextPanel";
 import { FullCheckWorkbench } from "@/components/cases/FullCheckWorkbench";
 import { KomplettSakWorkbench } from "@/components/cases/KomplettSakWorkbench";
 import { PurchaseGate } from "@/components/cases/PurchaseGate";
+import { SaksbehandlerTab } from "@/components/cases/SaksbehandlerTab";
 import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
 import { SkatteendringWorkbench } from "@/components/cases/SkatteendringWorkbench";
 import { StrategiskUtredningWorkbench } from "@/components/cases/StrategiskUtredningWorkbench";
@@ -35,50 +37,64 @@ export default async function CaseWorkspacePage({
   if (!caseData) notFound();
 
   const activeStage: CaseStage = isStage(steg) ? steg : caseData.stage;
+  const showSaksbehandler = steg === "saksbehandler";
   const documentation = await getDocumentationSummary(supabase, caseData.id);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <h1 className="text-2xl font-semibold text-ink">{caseData.title}</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-ink">{caseData.title}</h1>
+        <Link
+          href={`/min-side/saker/${caseData.id}?steg=saksbehandler`}
+          className="shrink-0 rounded-md bg-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-primary-ink"
+        >
+          Snakk med Min saksbehandler
+        </Link>
+      </div>
 
       <div className="mt-8 flex flex-col gap-8 lg:flex-row">
         <div className="flex-1">
-          {activeStage === "enkel-sjekk" && <SimpleCheckWorkbench caseData={caseData} />}
-          {activeStage === "full-sjekk" && (
-            <PurchaseGate
-              caseId={caseData.id}
-              productCode="full-sjekk"
-              checkoutPending={checkout === "success"}
-            >
-              <FullCheckWorkbench caseData={caseData} />
-            </PurchaseGate>
-          )}
-          {activeStage === "skatteendring" && (
-            <PurchaseGate
-              caseId={caseData.id}
-              productCode="skatteendring"
-              checkoutPending={checkout === "success"}
-            >
-              <SkatteendringWorkbench caseData={caseData} />
-            </PurchaseGate>
-          )}
-          {activeStage === "komplett-sak" && (
-            <PurchaseGate
-              caseId={caseData.id}
-              productCode="komplett-sak"
-              checkoutPending={checkout === "success"}
-            >
-              <KomplettSakWorkbench caseData={caseData} />
-            </PurchaseGate>
-          )}
-          {activeStage === "strategisk-utredning" && (
-            <PurchaseGate
-              caseId={caseData.id}
-              productCode="strategisk-utredning"
-              checkoutPending={checkout === "success"}
-            >
-              <StrategiskUtredningWorkbench caseData={caseData} />
-            </PurchaseGate>
+          {showSaksbehandler && <SaksbehandlerTab caseId={caseData.id} />}
+          {!showSaksbehandler && (
+            <>
+              {activeStage === "enkel-sjekk" && <SimpleCheckWorkbench caseData={caseData} />}
+              {activeStage === "full-sjekk" && (
+                <PurchaseGate
+                  caseId={caseData.id}
+                  productCode="full-sjekk"
+                  checkoutPending={checkout === "success"}
+                >
+                  <FullCheckWorkbench caseData={caseData} />
+                </PurchaseGate>
+              )}
+              {activeStage === "skatteendring" && (
+                <PurchaseGate
+                  caseId={caseData.id}
+                  productCode="skatteendring"
+                  checkoutPending={checkout === "success"}
+                >
+                  <SkatteendringWorkbench caseData={caseData} />
+                </PurchaseGate>
+              )}
+              {activeStage === "komplett-sak" && (
+                <PurchaseGate
+                  caseId={caseData.id}
+                  productCode="komplett-sak"
+                  checkoutPending={checkout === "success"}
+                >
+                  <KomplettSakWorkbench caseData={caseData} />
+                </PurchaseGate>
+              )}
+              {activeStage === "strategisk-utredning" && (
+                <PurchaseGate
+                  caseId={caseData.id}
+                  productCode="strategisk-utredning"
+                  checkoutPending={checkout === "success"}
+                >
+                  <StrategiskUtredningWorkbench caseData={caseData} />
+                </PurchaseGate>
+              )}
+            </>
           )}
         </div>
         <CaseContextPanel
