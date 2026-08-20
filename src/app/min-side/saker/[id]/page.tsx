@@ -42,14 +42,16 @@ export default async function CaseWorkspacePage({
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold text-ink">{caseData.title}</h1>
-        <Link
-          href={`/min-side/saker/${caseData.id}?steg=saksbehandler`}
-          className="shrink-0 rounded-md bg-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-primary-ink"
-        >
-          Snakk med Min saksbehandler
-        </Link>
+        {!showSaksbehandler && (
+          <Link
+            href={`/min-side/saker/${caseData.id}?steg=saksbehandler`}
+            className="self-start rounded-md bg-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-primary-ink sm:shrink-0"
+          >
+            Snakk med Min saksbehandler
+          </Link>
+        )}
       </div>
 
       <div className="mt-8 flex flex-col gap-8 lg:flex-row">

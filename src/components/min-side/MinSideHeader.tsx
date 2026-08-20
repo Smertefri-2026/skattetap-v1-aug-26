@@ -8,12 +8,14 @@ export function MinSideHeader({ email }: { email: string }) {
           Skattetap<span className="text-primary">.no</span>
         </Link>
 
-        <div className="flex items-center gap-4">
-          <span className="text-[13px] text-ink-faint">{email}</span>
+        <div className="flex shrink-0 items-center gap-4">
+          <span className="hidden truncate text-[13px] text-ink-faint sm:inline sm:max-w-[220px]">
+            {email}
+          </span>
           <form action="/auth/signout" method="post">
             <button
               type="submit"
-              className="text-[13.5px] font-semibold text-ink-soft hover:text-ink"
+              className="shrink-0 whitespace-nowrap text-[13.5px] font-semibold text-ink-soft hover:text-ink"
             >
               Logg ut
             </button>
