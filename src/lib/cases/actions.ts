@@ -15,6 +15,11 @@ const createCaseSchema = z.object({
   // on Enkel sjekk. Invalid/missing values fall back to enkel-sjekk --
   // never trusted blindly since it arrives as a plain hidden field.
   steg: z.enum(stageOrder as [CaseStage, ...CaseStage[]]).optional(),
+  // Where to land after creation. "case" (default) is the original
+  // behaviour -- straight to the case's own PurchaseGate. "utsjekk" is for
+  // the one-page checkout, which needs to stay on /utsjekk with the new
+  // case selected instead of jumping to the case page.
+  returnTo: z.enum(["case", "utsjekk"]).optional(),
 });
 
 export async function createCase(formData: FormData) {
@@ -22,6 +27,7 @@ export async function createCase(formData: FormData) {
   const parsed = createCaseSchema.safeParse({
     title: formData.get("title"),
     steg: formData.get("steg") || undefined,
+    returnTo: formData.get("returnTo") || undefined,
   });
 
   if (!parsed.success) {
@@ -39,5 +45,9 @@ export async function createCase(formData: FormData) {
     redirect("/min-side?tab=saker&feil=kunne-ikke-opprette");
   }
 
-  redirect(`/min-side/saker/${data.id}?steg=${parsed.data.steg ?? "enkel-sjekk"}`);
+  const steg = parsed.data.steg ?? "enkel-sjekk";
+  if (parsed.data.returnTo === "utsjekk") {
+    redirect(`/utsjekk?produkt=${steg}&sak=${data.id}`);
+  }
+  redirect(`/min-side/saker/${data.id}?steg=${steg}`);
 }

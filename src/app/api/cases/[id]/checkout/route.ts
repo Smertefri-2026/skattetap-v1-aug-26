@@ -4,7 +4,12 @@ import { requireUser } from "@/lib/auth/requireUser";
 import { createCheckoutSession } from "@/lib/purchases/createCheckout";
 import { createClient } from "@/lib/supabase/server";
 
-const bodySchema = z.object({ productCode: z.string().min(1) });
+const bodySchema = z.object({
+  productCode: z.string().min(1),
+  // Optional so the case-page PurchasePrompt flow (which doesn't collect
+  // this yet) keeps working unchanged -- only /utsjekk's checkout sends it.
+  angrerettAccepted: z.boolean().optional(),
+});
 
 export async function POST(
   req: Request,
@@ -39,6 +44,7 @@ export async function POST(
       productCode: parsed.data.productCode,
       successUrl: `${siteUrl}${returnPath}?checkout=success`,
       cancelUrl: `${siteUrl}${returnPath}?checkout=canceled`,
+      angrerettAccepted: parsed.data.angrerettAccepted,
     });
     return NextResponse.json({ url });
   } catch (err) {

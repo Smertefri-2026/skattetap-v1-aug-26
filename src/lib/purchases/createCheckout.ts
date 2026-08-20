@@ -10,6 +10,10 @@ export interface CreateCheckoutInput {
   productCode: string;
   successUrl: string;
   cancelUrl: string;
+  /** Server-stamped, never a client-supplied timestamp -- see the API
+   * route's zod schema. Optional so the older case-page PurchasePrompt
+   * flow (which doesn't collect this yet) keeps working unchanged. */
+  angrerettAccepted?: boolean;
 }
 
 /**
@@ -69,6 +73,7 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
       amount_kr: quote.costKr,
       idempotency_key: crypto.randomUUID(),
       status: "pending",
+      angrerett_accepted_at: input.angrerettAccepted ? new Date().toISOString() : null,
     })
     .select("id")
     .single();
