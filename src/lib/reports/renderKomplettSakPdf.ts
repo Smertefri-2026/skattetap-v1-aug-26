@@ -9,7 +9,7 @@ export async function renderKomplettSakPdf(
 
   w.title(`Komplett saksmappe -- ${caseTitle}`);
   w.paragraph(
-    "Utvidet analyse fra Skattetap. Skiller mellom dokumenterte fakta, brukerens forklaring, KI-vurderinger og skatterettslige vurderinger. Ikke en juridisk konklusjon."
+    "Utvidet analyse fra SkatteTap. Skiller mellom dokumenterte fakta, brukerens forklaring, KI-vurderinger og skatterettslige vurderinger. Ikke en juridisk konklusjon."
   );
 
   if (content.changes_since_last.has_previous) {

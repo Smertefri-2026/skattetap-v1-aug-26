@@ -3,7 +3,7 @@ import { LegalReviewFlag } from "@/components/marketing/LegalReviewFlag";
 
 export const metadata: Metadata = {
   title: "Personvern",
-  description: "Personvernerklæring for Skattetap.",
+  description: "Personvernerklæring for SkatteTap.",
 };
 
 export default function PersonvernPage() {
@@ -55,9 +55,9 @@ export default function PersonvernPage() {
             levere tjenesten, generere rapporter og brev knyttet til dine
             saker, håndtere betaling og kunne kontakte deg om egen sak.
             Behandling av kontoopplysninger og sakens innhold skjer for å
-            oppfylle avtalen mellom deg og Skattetap. Grunnleggende
+            oppfylle avtalen mellom deg og SkatteTap. Grunnleggende
             bruksdata for drift og sikkerhet behandles på grunnlag av
-            Skattetaps berettigede interesse i å levere en trygg og
+            SkatteTaps berettigede interesse i å levere en trygg og
             fungerende tjeneste.
           </p>
         </section>
@@ -76,10 +76,10 @@ export default function PersonvernPage() {
         <section>
           <h2 className="text-[16px] font-semibold text-ink">5. Databehandlere og mottakere av opplysninger</h2>
           <p className="mt-2">
-            Skattetap bruker eksterne leverandører for å drifte tjenesten,
+            SkatteTap bruker eksterne leverandører for å drifte tjenesten,
             blant annet til databaselagring og dokumentlagring, betaling og
             KI-basert analyse. Disse behandler opplysninger på vegne av
-            Skattetap, og har ikke selvstendig rett til å bruke dem til
+            SkatteTap, og har ikke selvstendig rett til å bruke dem til
             egne formål.
           </p>
           <LegalReviewFlag>
@@ -139,7 +139,7 @@ export default function PersonvernPage() {
         <section>
           <h2 className="text-[16px] font-semibold text-ink">9. Informasjonskapsler (cookies)</h2>
           <p className="mt-2">
-            Skattetap bruker informasjonskapsler som er nødvendige for at
+            SkatteTap bruker informasjonskapsler som er nødvendige for at
             innlogging og sikkerhet skal fungere. Enkelte
             tredjepartstjenester vi bruker, blant annet for
             bot-beskyttelse, kan også sette informasjonskapsler.

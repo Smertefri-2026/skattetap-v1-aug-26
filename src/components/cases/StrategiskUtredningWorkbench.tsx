@@ -28,7 +28,7 @@ export async function StrategiskUtredningWorkbench({ caseData }: { caseData: Cas
       <div>
         <h2 className="text-[18px] font-semibold text-ink">Strategisk utredning</h2>
         <p className="mt-1.5 max-w-2xl text-[13.5px] text-ink-soft">
-          Den mest avanserte analysen Skattetap kan produsere: mønstre på tvers av dine saker og
+          Den mest avanserte analysen SkatteTap kan produsere: mønstre på tvers av dine saker og
           skatteår, sammenligning av fakta og utfall, fristvurdering, samlet økonomisk
           eksponering, og flere alternative strategier -- ingen presentert som den sikre veien
           videre.

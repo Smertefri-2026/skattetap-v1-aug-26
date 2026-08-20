@@ -14,11 +14,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Skattetap – Sjekk om du har betalt for mye skatt",
-    template: "%s | Skattetap",
+    default: "SkatteTap – Sjekk om du har betalt for mye skatt",
+    template: "%s | SkatteTap",
   },
   description:
-    "Skattetap hjelper deg å vurdere skattefradrag, feil skatt og mulige krav basert på dine egne dokumenter.",
+    "SkatteTap hjelper deg å vurdere skattefradrag, feil skatt og mulige krav basert på dine egne dokumenter.",
 };
 
 export default function RootLayout({

@@ -4,7 +4,7 @@ import { ContactForm } from "@/components/marketing/ContactForm";
 
 export const metadata: Metadata = {
   title: "Kontakt",
-  description: "Ta kontakt med Skattetap.",
+  description: "Ta kontakt med SkatteTap.",
 };
 
 export default function KontaktPage() {

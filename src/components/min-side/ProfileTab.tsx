@@ -156,7 +156,7 @@ export async function ProfileTab() {
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-border-strong"
             />
             <span>
-              Jeg ønsker å motta nyheter, produktoppdateringer og tilbud fra Skattetap
+              Jeg ønsker å motta nyheter, produktoppdateringer og tilbud fra SkatteTap
             </span>
           </label>
           <Button type="submit" variant="secondary" className="self-start">

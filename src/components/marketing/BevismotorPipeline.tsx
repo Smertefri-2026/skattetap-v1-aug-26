@@ -43,7 +43,7 @@ export function BevismotorPipeline() {
         <FlowArrow />
 
         <div className="flex flex-col items-center gap-1.5 rounded-lg border border-primary bg-primary-subtle p-4 text-center shadow-sm md:w-[170px]">
-          <p className="text-[12.5px] font-semibold text-primary-ink">Skattetaps Bevismotor</p>
+          <p className="text-[12.5px] font-semibold text-primary-ink">SkatteTaps Bevismotor</p>
           <p className="text-[11.5px] text-primary-ink">leser, sjekker, begrunner</p>
         </div>
 

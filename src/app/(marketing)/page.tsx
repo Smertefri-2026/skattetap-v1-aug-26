@@ -34,7 +34,7 @@ export default function Home() {
           Har du betalt for mye skatt?
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-[16.5px] text-ink-soft">
-          Skattetap går gjennom saken din slik en fagperson ville gjort: dokumenterer hver
+          SkatteTap går gjennom saken din slik en fagperson ville gjort: dokumenterer hver
           påstand til kilden, forklarer hver vurdering, og sier tydelig fra når noe mangler
           eller motsier hverandre.
         </p>
@@ -69,7 +69,7 @@ export default function Home() {
           Fra dokument til anbefalt handling
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-center text-[15px] text-ink-soft">
-          Du laster opp et dokument. Skattetaps Bevismotor leser det, sjekker det mot det du har
+          Du laster opp et dokument. SkatteTaps Bevismotor leser det, sjekker det mot det du har
           oppgitt selv, og viser deg nøyaktig hva som er dokumentert, hva som motsier hverandre,
           og hva som mangler — før den foreslår neste steg.
         </p>
@@ -84,10 +84,10 @@ export default function Home() {
             href="/om"
             className="block text-center text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint hover:text-primary"
           >
-            Skattetaps Bevismotor
+            SkatteTaps Bevismotor
           </Link>
           <h2 className="mt-2 text-center text-2xl font-semibold text-ink">
-            Skattetap gjetter aldri
+            SkatteTap gjetter aldri
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-center text-[15px] text-ink-soft">
             Alt du oppgir selv, det som faktisk bekreftes av dokumentene dine, og det som er en

@@ -24,7 +24,7 @@ const trustAnswers = [
     a: "Nei. Enkel sjekk er alltid gratis, og du bestemmer selv om du vil gå videre.",
   },
   {
-    q: "Hva om Skattetap ikke finner noe?",
+    q: "Hva om SkatteTap ikke finner noe?",
     a: "Da får du beskjed om det, tydelig og ærlig -- ikke et forsøk på å overbevise deg om noe som ikke er der.",
   },
   {

@@ -145,7 +145,7 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
       <section id="konflikter">
         <h2 className="text-[16px] font-semibold text-ink">Konflikter</h2>
         <p className="mt-1.5 max-w-2xl text-[13px] text-ink-soft">
-          Her ligger hver motsigelse Evidence Engine har funnet mellom dokumentene i saken, én og én: hvilken
+          Her ligger hver motsigelse Bevismotoren har funnet mellom dokumentene i saken, én og én: hvilken
           påstand som strider mot hvilken, hvorfor, og hva som konkret avklarer den.
         </p>
         <div className="mt-4">

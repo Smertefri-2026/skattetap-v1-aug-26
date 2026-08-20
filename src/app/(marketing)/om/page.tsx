@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Om Skattetap",
-  description: "Hvem står bak Skattetap, og hva produktet faktisk er.",
+  title: "Om SkatteTap",
+  description: "Hvem står bak SkatteTap, og hva produktet faktisk er.",
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -17,19 +17,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function OmPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-20">
-      <h1 className="text-3xl font-semibold text-ink">Om Skattetap</h1>
+      <h1 className="text-3xl font-semibold text-ink">Om SkatteTap</h1>
       <p className="mt-4 text-[15.5px] leading-relaxed text-ink-soft">
-        Skattetap er bygget for å gjøre det enklere å oppdage og undersøke forhold i egen skatt
+        SkatteTap er bygget for å gjøre det enklere å oppdage og undersøke forhold i egen skatt
         som er verdt å se nærmere på — fradrag som er glemt, feil i grunnlaget, eller andre
         uklarheter.
       </p>
 
       <div className="mt-12 flex flex-col gap-10">
-        <Section title="Evidence Engine — vårt viktigste prinsipp">
+        <Section title="SkatteTaps Bevismotor — vårt viktigste prinsipp">
           <p>
             Vi bruker kunstig intelligens til å lese dokumenter og strukturere informasjon. Men et
-            system som gjetter, er verdiløst i en skattesak. Derfor bygger alt i Skattetap på ett
-            prinsipp vi kaller Evidence Engine: det du selv forteller, det som faktisk er
+            system som gjetter, er verdiløst i en skattesak. Derfor bygger alt i SkatteTap på ett
+            prinsipp vi kaller Bevismotoren: det du selv forteller, det som faktisk er
             dokumentert, og det som er en KI-vurdering, holdes alltid tydelig fra hverandre.
           </p>
           <p className="mt-3">
@@ -39,10 +39,10 @@ export default function OmPage() {
           </p>
         </Section>
 
-        <Section title="Hva Skattetap ikke er">
+        <Section title="Hva SkatteTap ikke er">
           <div className="rounded-lg border border-border bg-surface-alt p-6">
             <p className="text-[14px] text-ink-soft">
-              Skattetap gir ingen juridisk fasit og garanterer ikke noe bestemt utfall.
+              SkatteTap gir ingen juridisk fasit og garanterer ikke noe bestemt utfall.
               Vurderingene i produktet er et strukturert utgangspunkt for videre vurdering — ikke
               en avgjørelse.
             </p>

@@ -31,7 +31,7 @@ export default async function LoggInnPage({
           </p>
 
           <p className="mt-8 max-w-xs text-[13.5px] leading-relaxed text-ink-soft">
-            Skattetap dokumenterer, begrunner og sier fra når noe mangler — aldri gjetting.
+            SkatteTap dokumenterer, begrunner og sier fra når noe mangler — aldri gjetting.
           </p>
 
           <ul className="mt-6 flex flex-col gap-2">

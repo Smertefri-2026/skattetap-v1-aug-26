@@ -8,7 +8,7 @@ export async function renderSkatteendringPdf(
   const w = await PdfWriter.create();
 
   w.title(`Forslag til skatteendring -- ${caseTitle}`);
-  w.paragraph("Utkast fra Skattetap -- gjennomgå før innsending. Ikke en juridisk konklusjon.");
+  w.paragraph("Utkast fra SkatteTap -- gjennomgå før innsending. Ikke en juridisk konklusjon.");
 
   w.heading("Henvendelse");
   w.paragraph(content.proposal_text);

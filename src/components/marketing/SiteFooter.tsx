@@ -13,7 +13,7 @@ const columns = [
   {
     title: "Selskap",
     links: [
-      { href: "/om", label: "Om Skattetap" },
+      { href: "/om", label: "Om SkatteTap" },
       { href: "/kontakt", label: "Kontakt" },
     ],
   },
@@ -35,7 +35,7 @@ export function SiteFooter() {
             <Wordmark tone="on-dark" className="text-[15px]" />
           </p>
           <p className="mt-3 text-[13px] leading-relaxed text-white/60">
-            Skattetap gir deg en strukturert vurdering av saken din basert på
+            SkatteTap gir deg en strukturert vurdering av saken din basert på
             dine egne dokumenter. Vi gir ingen juridisk fasit og garanterer
             ikke noe resultat.
           </p>
@@ -65,7 +65,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-white/10">
         <div className="mx-auto max-w-5xl px-6 py-5 text-[12px] text-white/40">
-          © {new Date().getFullYear()} Skattetap.no
+          © {new Date().getFullYear()} SkatteTap.no
         </div>
       </div>
     </footer>

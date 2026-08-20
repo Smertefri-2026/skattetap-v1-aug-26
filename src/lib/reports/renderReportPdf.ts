@@ -8,7 +8,7 @@ export async function renderFullCheckReportPdf(
   const w = await PdfWriter.create();
 
   w.title(caseTitle);
-  w.paragraph("Full sjekk-rapport fra Skattetap -- ikke en juridisk konklusjon.");
+  w.paragraph("Full sjekk-rapport fra SkatteTap -- ikke en juridisk konklusjon.");
 
   w.heading("Sammendrag");
   w.paragraph(content.summary);

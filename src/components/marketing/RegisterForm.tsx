@@ -272,7 +272,7 @@ export function RegisterForm({ next }: { next?: string } = {}) {
           />
           <span>
             Jeg ønsker å motta nyheter, produktoppdateringer og tilbud fra
-            Skattetap
+            SkatteTap
           </span>
         </label>
       </div>

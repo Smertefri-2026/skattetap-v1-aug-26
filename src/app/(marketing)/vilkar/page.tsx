@@ -3,7 +3,7 @@ import { LegalReviewFlag } from "@/components/marketing/LegalReviewFlag";
 
 export const metadata: Metadata = {
   title: "Vilkår",
-  description: "Vilkår for bruk av Skattetap.",
+  description: "Vilkår for bruk av SkatteTap.",
 };
 
 export default function VilkarPage() {
@@ -23,7 +23,7 @@ export default function VilkarPage() {
         <section>
           <h2 className="text-[16px] font-semibold text-ink">1. Om tjenesten</h2>
           <p className="mt-2">
-            Skattetap er en nettbasert tjeneste som hjelper deg å strukturere
+            SkatteTap er en nettbasert tjeneste som hjelper deg å strukturere
             og vurdere opplysninger i en skattesak, ved hjelp av
             kunstig intelligens og egne dokumenter du laster opp. Tjenesten
             gir ingen juridisk fasit og garanterer ikke noe bestemt utfall.
@@ -31,20 +31,20 @@ export default function VilkarPage() {
         </section>
 
         <section>
-          <h2 className="text-[16px] font-semibold text-ink">2. Hva Skattetap er -- og ikke er</h2>
+          <h2 className="text-[16px] font-semibold text-ink">2. Hva SkatteTap er -- og ikke er</h2>
           <p className="mt-2">
-            Skattetap er ikke et advokatfirma og tilbyr ikke juridisk
-            bistand eller rådgivning. Skattetap er heller ikke en autorisert
+            SkatteTap er ikke et advokatfirma og tilbyr ikke juridisk
+            bistand eller rådgivning. SkatteTap er heller ikke en autorisert
             regnskapsfører eller skatterådgiver, og vurderingene i tjenesten
             erstatter ikke rådgivning fra en advokat, autorisert
             regnskapsfører eller andre kvalifiserte fagpersoner. Det du får i
-            Skattetap er en strukturert, KI-støttet gjennomgang av egne
+            SkatteTap er en strukturert, KI-støttet gjennomgang av egne
             opplysninger og dokumenter -- et utgangspunkt for videre
             vurdering, ikke en konklusjon du kan legge til grunn som riktig
             uten selv å vurdere den.
           </p>
           <LegalReviewFlag>
-            Kjerneformulering for å unngå at Skattetap fremstår som om
+            Kjerneformulering for å unngå at SkatteTap fremstår som om
             selskapet tilbyr tjenester forbeholdt advokater (jf.
             domstolloven kap. 11) eller autoriserte regnskapsførere (jf.
             regnskapsførerloven). Bør kvalitetssikres opp mot gjeldende
@@ -56,7 +56,7 @@ export default function VilkarPage() {
         <section>
           <h2 className="text-[16px] font-semibold text-ink">3. Bevismotoren og hvordan vurderinger produseres</h2>
           <p className="mt-2">
-            Skattetap bruker det vi kaller <strong className="text-ink">Skattetaps Bevismotor</strong>:
+            SkatteTap bruker det vi kaller <strong className="text-ink">SkatteTaps Bevismotor</strong>:
             et sett prinsipper for hvordan systemet behandler informasjon.
             Det du selv oppgir, det som faktisk er dokumentert i det du
             laster opp, og det som er en KI-vurdering, holdes alltid
@@ -109,7 +109,7 @@ export default function VilkarPage() {
           <h2 className="text-[16px] font-semibold text-ink">6. Betaling</h2>
           <p className="mt-2">
             Betaling håndteres av Stripe, en ekstern betalingsleverandør.
-            Skattetap lagrer ikke kortopplysningene dine selv. Kjøpet
+            SkatteTap lagrer ikke kortopplysningene dine selv. Kjøpet
             regnes som gjennomført når betalingen er bekreftet av Stripe.
           </p>
         </section>
@@ -129,7 +129,7 @@ export default function VilkarPage() {
             eksplisitt samtykke- eller bekreftelsessteg for dette før
             betaling -- brukeren klikker rett fra &quot;Kjøp&quot;-knappen til
             Stripes betalingsside. Uten et slikt steg er det usikkert om
-            Skattetap faktisk kan påberope seg unntaket fra angreretten.
+            SkatteTap faktisk kan påberope seg unntaket fra angreretten.
             Dette bør avklares med jurist, og mest sannsynlig krever det et
             eget avkrysningsfelt/bekreftelsessteg i kjøpsflyten (en
             produktendring, ikke bare en tekstendring) før dette avsnittet
@@ -146,7 +146,7 @@ export default function VilkarPage() {
             generert. Oppstår det en teknisk feil som gjør at du ikke får
             det du har betalt for, kan du kontakte oss for å få saken
             vurdert. Refusjon i slike tilfeller behandles manuelt av
-            Skattetap og skjer i så fall tilbake til opprinnelig
+            SkatteTap og skjer i så fall tilbake til opprinnelig
             betalingsmiddel via Stripe.
           </p>
           <LegalReviewFlag>
@@ -164,7 +164,7 @@ export default function VilkarPage() {
             Vurderinger, forslag og analyser i tjenesten er et strukturert
             utgangspunkt for videre vurdering -- ikke juridisk rådgivning og
             ikke en avgjørelse fra Skatteetaten eller andre myndigheter.
-            Skattetap er ikke ansvarlig for beslutninger du tar på bakgrunn
+            SkatteTap er ikke ansvarlig for beslutninger du tar på bakgrunn
             av innholdet i tjenesten, for utfallet av en henvendelse til
             Skatteetaten, eller for indirekte tap som følge av bruk av
             tjenesten.
@@ -188,7 +188,7 @@ export default function VilkarPage() {
           </p>
           <LegalReviewFlag>
             Produktet har i dag ingen selvbetjent &quot;slett konto&quot;-funksjon --
-            sletting må gjøres manuelt av Skattetap etter henvendelse.
+            sletting må gjøres manuelt av SkatteTap etter henvendelse.
             Teksten over er tilpasset dette (kontakt oss, ikke et
             selvbetjent alternativ). Vurder om selvbetjent sletting bør
             bygges, og bekreft nøyaktig oppbevaringstid for regnskapsdata
@@ -199,7 +199,7 @@ export default function VilkarPage() {
         <section>
           <h2 className="text-[16px] font-semibold text-ink">11. Endringer i vilkårene</h2>
           <p className="mt-2">
-            Skattetap kan oppdatere disse vilkårene. Vesentlige endringer
+            SkatteTap kan oppdatere disse vilkårene. Vesentlige endringer
             varsles på rimelig måte, for eksempel på denne siden eller ved
             e-post. Fortsatt bruk av tjenesten etter en endring innebærer at
             du godtar de oppdaterte vilkårene.

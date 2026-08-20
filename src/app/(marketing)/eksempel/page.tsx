@@ -5,7 +5,7 @@ import { EvidenceStatsGrid } from "@/components/cases/EvidenceStatsGrid";
 
 export const metadata: Metadata = {
   title: "Eksempel",
-  description: "Et gjennomarbeidet, fiktivt eksempel på en sak i Skattetap.",
+  description: "Et gjennomarbeidet, fiktivt eksempel på en sak i SkatteTap.",
 };
 
 export default function EksempelPage() {
@@ -17,7 +17,7 @@ export default function EksempelPage() {
       </h1>
       <p className="mt-4 max-w-xl text-[15.5px] text-ink-soft">
         Personen, tallene og dokumentene under er oppdiktet, men prosessen er
-        realistisk for hvordan en sak beveger seg gjennom Skattetap.
+        realistisk for hvordan en sak beveger seg gjennom SkatteTap.
       </p>
 
       <div className="mt-12 flex flex-col gap-10">
@@ -129,7 +129,7 @@ export default function EksempelPage() {
             </h2>
           </div>
           <p className="mt-3 text-[14.5px] leading-relaxed text-ink-soft">
-            Skattetap satte opp et utkast til endringsanmodning for 2023, med
+            SkatteTap satte opp et utkast til endringsanmodning for 2023, med
             rapporten som vedlegg. Kari leste gjennom, justerte ett avsnitt
             selv, og sendte den til Skatteetaten.
           </p>

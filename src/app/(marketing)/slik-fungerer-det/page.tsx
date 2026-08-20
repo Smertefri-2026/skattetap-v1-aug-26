@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Slik fungerer det",
-  description: "Fra første spørsmål til ferdig rapport -- se hva som faktisk skjer når du bruker Skattetap.",
+  description: "Fra første spørsmål til ferdig rapport -- se hva som faktisk skjer når du bruker SkatteTap.",
 };
 
 interface JourneyStep {
@@ -39,7 +39,7 @@ const groups: JourneyGroup[] = [
     ],
   },
   {
-    eyebrow: "Skattetap jobber for deg",
+    eyebrow: "SkatteTap jobber for deg",
     steps: [
       {
         n: 4,
@@ -81,7 +81,7 @@ export default function SlikFungererDetPage() {
       <h1 className="text-3xl font-semibold text-ink">Slik fungerer det</h1>
       <p className="mt-4 max-w-xl text-[15.5px] text-ink-soft">
         Fra første spørsmål til ferdig rapport -- se hva som faktisk skjer når du bruker
-        Skattetap.
+        SkatteTap.
       </p>
 
       <div className="mt-12 flex flex-col gap-12">
@@ -102,7 +102,7 @@ export default function SlikFungererDetPage() {
                     {step.n === 4 && (
                       <div className="mt-4 rounded-md border border-primary bg-primary-subtle px-4 py-3">
                         <p className="text-[12.5px] text-primary-ink">
-                          Dette er kjernen i det vi kaller <span className="font-semibold">Evidence Engine</span>:
+                          Dette er kjernen i det vi kaller <span className="font-semibold">Bevismotoren</span>:
                           systemet gjetter aldri. Det dokumenterer hver påstand til kilden, begrunner hver
                           vurdering, og sier tydelig fra når noe mangler.
                         </p>
@@ -118,7 +118,7 @@ export default function SlikFungererDetPage() {
 
       <div className="mt-14 rounded-lg border border-border bg-surface-alt p-6">
         <p className="text-[14px] text-ink-soft">
-          Skattetap gir deg en strukturert vurdering, ikke en juridisk fasit.
+          SkatteTap gir deg en strukturert vurdering, ikke en juridisk fasit.
           Vi garanterer ikke noe bestemt resultat i saken din.
         </p>
       </div>
