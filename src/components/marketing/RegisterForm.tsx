@@ -2,46 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button } from "@/components/design-system";
+import { Button, PasswordField } from "@/components/design-system";
 import { createClient } from "@/lib/supabase/client";
 
 type State = "idle" | "submitting" | "sent" | "error";
 
 const inputClass =
   "mt-1.5 w-full rounded-md border border-border-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-primary";
-const passwordInputClass =
-  "w-full rounded-md border border-border-strong bg-surface px-3.5 py-2.5 pr-11 text-[14px] text-ink outline-none focus:border-primary";
 const labelClass = "text-[13px] font-medium text-ink";
-
-function EyeIcon({ open }: { open: boolean }) {
-  return open ? (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-5 w-5"
-      aria-hidden="true"
-    >
-      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ) : (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-5 w-5"
-      aria-hidden="true"
-    >
-      <path d="M3 3l18 18" />
-      <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6 0 9.5 6 9.5 6a17.5 17.5 0 0 1-3 3.6" />
-      <path d="M6.1 6.1C3.8 7.7 2.5 12 2.5 12s3.5 6 9.5 6a9.7 9.7 0 0 0 3.1-.5" />
-      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
-    </svg>
-  );
-}
 
 export function RegisterForm() {
   const [firstName, setFirstName] = useState("");
@@ -53,9 +21,6 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
@@ -86,7 +51,7 @@ export function RegisterForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/konto-bekreftet`,
+        emailRedirectTo: `${window.location.origin}/konto-bekreftet`,
         data: {
           first_name: firstName,
           last_name: lastName,
@@ -239,63 +204,25 @@ export function RegisterForm() {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="password" className={labelClass}>
-            Passord
-          </label>
+        <PasswordField
+          id="password"
+          label="Passord"
+          value={password}
+          onChange={setPassword}
+          required
+          minLength={8}
+          autoComplete="new-password"
+        />
 
-          <div className="relative mt-1.5">
-            <input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={passwordInputClass}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword((value) => !value)}
-              aria-label={showPassword ? "Skjul passord" : "Vis passord"}
-              title={showPassword ? "Skjul passord" : "Vis passord"}
-              className="absolute inset-y-0 right-3 flex items-center text-ink-soft transition-colors hover:text-ink"
-            >
-              <EyeIcon open={showPassword} />
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="confirm-password" className={labelClass}>
-            Bekreft passord
-          </label>
-
-          <div className="relative mt-1.5">
-            <input
-              id="confirm-password"
-              type={showConfirmPassword ? "text" : "password"}
-              required
-              minLength={8}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={passwordInputClass}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword((value) => !value)}
-              aria-label={
-                showConfirmPassword ? "Skjul passord" : "Vis passord"
-              }
-              title={showConfirmPassword ? "Skjul passord" : "Vis passord"}
-              className="absolute inset-y-0 right-3 flex items-center text-ink-soft transition-colors hover:text-ink"
-            >
-              <EyeIcon open={showConfirmPassword} />
-            </button>
-          </div>
-        </div>
+        <PasswordField
+          id="confirm-password"
+          label="Bekreft passord"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          required
+          minLength={8}
+          autoComplete="new-password"
+        />
       </div>
 
       <div className="mt-2 flex flex-col gap-3">
