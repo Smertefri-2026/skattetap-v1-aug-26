@@ -44,6 +44,15 @@ function buildSimpleCheckPrompt(input: SimpleCheckInput): string {
     `Beløp: ${input.amountKr != null ? `${input.amountKr} kr` : "ikke oppgitt"}`,
     "",
     wrapUntrustedContent("Brukerens forklaring:", input.description),
+    "",
+    `Svar med et JSON-objekt på nøyaktig denne formen:
+{
+  "understood_summary": "kort oppsummering av det brukeren oppgir, gjengitt som nettopp det -- ikke som fastslåtte fakta",
+  "things_to_investigate": ["konkrete forhold verdt å se nærmere på"],
+  "missing_information": ["konkret informasjon som mangler for å vurdere saken bedre"],
+  "full_check_recommended": true eller false,
+  "full_check_reasoning": "kort, konkret begrunnelse for anbefalingen"
+}`,
   ];
   return lines.join("\n");
 }
