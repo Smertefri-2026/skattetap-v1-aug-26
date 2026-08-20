@@ -18,7 +18,7 @@ export function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
 
     const supabase = createClient();
     const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/tilbakestill-passord`,
+      redirectTo: `${window.location.origin}/auth/confirm?next=/tilbakestill-passord`,
     });
 
     if (authError) {

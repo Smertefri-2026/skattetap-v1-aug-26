@@ -51,7 +51,7 @@ export function RegisterForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/konto-bekreftet`,
+        emailRedirectTo: `${window.location.origin}/auth/confirm?next=/konto-bekreftet`,
         data: {
           first_name: firstName,
           last_name: lastName,
