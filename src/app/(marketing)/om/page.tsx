@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Badge } from "@/components/design-system";
+import { CaseHistoryIllustration } from "@/components/marketing/CaseHistoryIllustration";
 
 export const metadata: Metadata = {
   title: "Om SkatteTap",
@@ -11,24 +12,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div>
       <h2 className="text-[13px] font-semibold uppercase tracking-wide text-ink-faint">{title}</h2>
       <div className="mt-2.5 text-[15px] leading-relaxed text-ink-soft">{children}</div>
-    </div>
-  );
-}
-
-/**
- * Stands in for a real founder photo -- sized and framed (portrait, 4:5)
- * so a real photograph can be dropped straight in later without touching
- * the layout. No stock photo or generated face in the meantime.
- */
-function FounderPhotoPlaceholder() {
-  return (
-    <div className="aspect-[4/5] w-full max-w-[280px] shrink-0 rounded-lg border border-border bg-surface-alt">
-      <div className="flex h-full w-full items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" className="h-14 w-14 text-ink-faint" aria-hidden="true">
-          <circle cx="12" cy="8.5" r="3.5" />
-          <path d="M4.5 20.5c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" />
-        </svg>
-      </div>
     </div>
   );
 }
@@ -65,7 +48,9 @@ export default function OmPage() {
                 dokumentasjonen.
               </p>
             </div>
-            <FounderPhotoPlaceholder />
+            <div className="aspect-[4/5] w-full max-w-[280px] shrink-0 rounded-lg border border-border bg-surface-alt p-4">
+              <CaseHistoryIllustration />
+            </div>
           </div>
         </Section>
 
