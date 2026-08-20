@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Badge } from "@/components/design-system";
+import { EvidenceStatsGrid } from "@/components/cases/EvidenceStatsGrid";
 
 export const metadata: Metadata = {
   title: "Eksempel",
@@ -74,8 +75,54 @@ export default function EksempelPage() {
 
         <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
           <div className="flex items-center gap-2.5">
+            <span className="font-mono text-[12px] text-ink-faint">Steg 3</span>
+            <h2 className="text-[16px] font-semibold text-ink">Levende saksbilde</h2>
+          </div>
+          <p className="mt-3 text-[14.5px] leading-relaxed text-ink-soft">
+            Saken hennes oppdaterte seg selv med det nye dokumentene viste — uten at Kari måtte
+            gjøre noe. Slik så statusen ut rett etter opplastingen:
+          </p>
+          <div className="mt-4">
+            <EvidenceStatsGrid
+              title="Saken akkurat nå"
+              stats={[
+                { label: "dokumenterte fakta", value: 4 },
+                { label: "udokumenterte fakta", value: 1 },
+                { label: "konflikter", value: 0 },
+                { label: "åpne dokumentasjonshull", value: 1, tone: "warning" },
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <span className="font-mono text-[12px] text-ink-faint">Steg 4</span>
+            <h2 className="text-[16px] font-semibold text-ink">Min saksbehandler</h2>
+          </div>
+          <p className="mt-3 text-[14.5px] leading-relaxed text-ink-soft">
+            Kari lurte på hvorfor 2024 fortsatt sto åpent, og spurte rett ut.
+          </p>
+          <div className="mt-4 flex flex-col gap-2.5">
+            <div className="flex justify-end">
+              <div className="max-w-[80%] rounded-lg bg-primary px-4 py-2.5 text-[13.5px] text-white">
+                Hvorfor står 2024 fortsatt åpent?
+              </div>
+            </div>
+            <div className="flex justify-start">
+              <div className="max-w-[80%] rounded-lg bg-surface-alt px-4 py-2.5 text-[13.5px] text-ink">
+                Fordi reisefradraget for 2024 ikke er dokumentert ennå — samme fradrag som for
+                2023, men vi mangler lønnsslipper eller annen bekreftelse for det året. Last opp
+                dokumentasjon for 2024, så oppdaterer jeg vurderingen.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+          <div className="flex items-center gap-2.5">
             <span className="font-mono text-[12px] text-ink-faint">
-              Steg 3
+              Steg 5
             </span>
             <h2 className="text-[16px] font-semibold text-ink">
               Skatteendring
@@ -95,9 +142,18 @@ export default function EksempelPage() {
         </div>
       </div>
 
-      <div className="mt-14 text-center">
+      <div className="mt-10 rounded-lg border border-border bg-surface-alt p-6">
+        <p className="text-[14px] text-ink-soft">
+          Karis sak var enkel nok til å stoppe her. Hadde den vært mer sammensatt -- flere år,
+          flere forhold, eller behov for å se mønstre på tvers av saker -- kunne hun gått videre
+          til Komplett sak eller Strategisk utredning. Samme saksbilde, samme dokumentasjon,
+          bare en dypere analyse.
+        </p>
+      </div>
+
+      <div className="mt-10 text-center">
         <Link
-          href="/logg-inn"
+          href="/logg-inn?tab=registrer"
           className="inline-flex rounded-md bg-primary px-6 py-3 text-[14.5px] font-semibold text-white hover:bg-primary-ink"
         >
           Start din egen enkle sjekk
