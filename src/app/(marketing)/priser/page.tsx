@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Badge } from "@/components/design-system";
+import { UpgradeStaircase } from "@/components/marketing/UpgradeStaircase";
+import type { CaseStage } from "@/lib/cases/types";
 import { getProducts } from "@/lib/products/catalog";
+import { getPurchaseHref, purchaseCtaLabel } from "@/lib/products/purchaseLinks";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -35,7 +38,11 @@ const trustAnswers = [
 
 export default async function PriserPage() {
   const supabase = await createClient();
-  const products = await getProducts(supabase);
+  const [{ data: userData }, products] = await Promise.all([supabase.auth.getUser(), getProducts(supabase)]);
+  const isLoggedIn = userData.user != null;
+  const priceByStage = Object.fromEntries(
+    products.map((p) => [p.product_code, p.price_kr])
+  ) as Partial<Record<CaseStage, number>>;
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-20">
@@ -46,29 +53,48 @@ export default async function PriserPage() {
       </p>
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-lg border border-primary bg-primary-subtle p-5">
+        <div className="flex flex-col rounded-lg border border-primary bg-primary-subtle p-5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[15px] font-semibold text-ink">Enkel sjekk</h2>
             <Badge tone="info">Gratis</Badge>
           </div>
-          <p className="mt-2.5 text-[13px] leading-relaxed text-ink-soft">
+          <p className="mt-2.5 flex-1 text-[13px] leading-relaxed text-ink-soft">
             Rask KI-vurdering av saken din, uten dokumentopplasting.
           </p>
+          <Link
+            href={getPurchaseHref("enkel-sjekk", isLoggedIn)}
+            className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-ink"
+          >
+            Start gratis
+          </Link>
         </div>
 
         {products.map((product) => (
-          <div key={product.product_code} className="rounded-lg border border-border bg-surface p-5 shadow-sm">
+          <div key={product.product_code} className="flex flex-col rounded-lg border border-border bg-surface p-5 shadow-sm">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-[15px] font-semibold text-ink">{product.name}</h2>
             </div>
             <p className="mt-1 text-[13px] font-medium text-ink-faint">
               {product.price_kr.toLocaleString("no-NO")} kr
             </p>
-            <p className="mt-2.5 text-[13px] leading-relaxed text-ink-soft">
+            <p className="mt-2.5 flex-1 text-[13px] leading-relaxed text-ink-soft">
               {descriptions[product.product_code] ?? ""}
             </p>
+            <Link
+              href={getPurchaseHref(product.product_code as CaseStage, isLoggedIn)}
+              className="mt-4 inline-flex items-center justify-center rounded-md border border-border-strong bg-surface px-4 py-2 text-[13px] font-semibold text-ink hover:bg-surface-alt"
+            >
+              {purchaseCtaLabel[product.product_code as CaseStage]}
+            </Link>
           </div>
         ))}
+      </div>
+
+      <div className="mt-14 rounded-lg border border-border bg-surface-alt p-6">
+        <p className="text-center text-[13px] font-medium text-ink-soft">Oppgradering underveis</p>
+        <div className="mt-5">
+          <UpgradeStaircase priceByStage={priceByStage} />
+        </div>
       </div>
 
       <div className="mt-14 grid gap-6 sm:grid-cols-3">

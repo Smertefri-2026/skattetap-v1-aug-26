@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Badge } from "@/components/design-system";
 
 export const metadata: Metadata = {
   title: "Om SkatteTap",
@@ -14,6 +15,24 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+/**
+ * Stands in for a real founder photo -- sized and framed (portrait, 4:5)
+ * so a real photograph can be dropped straight in later without touching
+ * the layout. No stock photo or generated face in the meantime.
+ */
+function FounderPhotoPlaceholder() {
+  return (
+    <div className="aspect-[4/5] w-full max-w-[280px] shrink-0 rounded-lg border border-border bg-surface-alt">
+      <div className="flex h-full w-full items-center justify-center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" className="h-14 w-14 text-ink-faint" aria-hidden="true">
+          <circle cx="12" cy="8.5" r="3.5" />
+          <path d="M4.5 20.5c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 export default function OmPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-20">
@@ -25,6 +44,31 @@ export default function OmPage() {
       </p>
 
       <div className="mt-12 flex flex-col gap-10">
+        <Section title="Hvorfor vi bygget SkatteTap">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+            <div className="flex-1">
+              <p>
+                Etter mer enn 20 år med egne skattesaker, skattekrav og omfattende dokumentasjon i
+                møte med Skatteetaten, har vi sett hvor krevende det kan være å få oversikt over en
+                sak. Dokumenter, datoer, beløp og vurderinger kan strekke seg over mange år.
+              </p>
+              <p className="mt-3">
+                Samtidig har kunstig intelligens gjort det mulig å analysere store mengder
+                dokumentasjon på en helt ny måte. Derfor bygget vi SkatteTap og vår egen
+                Bevismotor — for å gjøre det enklere å samle dokumentasjonen, finne fakta, oppdage
+                motstridende opplysninger og se hva som fortsatt mangler.
+              </p>
+              <p className="mt-3">
+                KI vil trolig bli en stadig større del av både offentlig forvaltning og hverdagen
+                vår. SkatteTap bruker teknologien allerede nå, men med ett prinsipp vi ikke går på
+                akkord med: KI skal ikke gjette. Vurderinger skal kunne spores tilbake til
+                dokumentasjonen.
+              </p>
+            </div>
+            <FounderPhotoPlaceholder />
+          </div>
+        </Section>
+
         <Section title="SkatteTaps Bevismotor — vårt viktigste prinsipp">
           <p>
             Vi bruker kunstig intelligens til å lese dokumenter og strukturere informasjon. Men et
@@ -37,6 +81,11 @@ export default function OmPage() {
             hvilket dokument en påstand kommer fra, hvorfor to opplysninger motsier hverandre, og
             konkret hva som mangler for å komme videre.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Badge tone="success">Dokumentert</Badge>
+            <Badge tone="warning">Motstridende</Badge>
+            <Badge tone="neutral">Dokumentasjonshull</Badge>
+          </div>
         </Section>
 
         <Section title="Hva SkatteTap ikke er">

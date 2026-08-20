@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { ProsessFlow } from "@/components/marketing/ProsessFlow";
 
 export const metadata: Metadata = {
   title: "Slik fungerer det",
@@ -85,33 +86,46 @@ export default function SlikFungererDetPage() {
       </p>
 
       <div className="mt-12 flex flex-col gap-12">
-        {groups.map((group) => (
+        {groups.map((group, groupIndex) => (
           <div key={group.eyebrow}>
-            <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
-              {group.eyebrow}
-            </p>
-            <div className="mt-5 flex flex-col gap-8">
-              {group.steps.map((step) => (
-                <div key={step.n} className="flex gap-5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-alt text-[13px] font-semibold text-ink-soft">
-                    {step.n}
+            <div>
+              <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
+                {group.eyebrow}
+              </p>
+              <div className="mt-5 flex flex-col gap-8">
+                {group.steps.map((step) => (
+                  <div key={step.n} className="flex gap-5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-alt text-[13px] font-semibold text-ink-soft">
+                      {step.n}
+                    </div>
+                    <div>
+                      <h2 className="text-[17px] font-semibold text-ink">{step.title}</h2>
+                      <p className="mt-2 text-[14.5px] leading-relaxed text-ink-soft">{step.body}</p>
+                      {step.n === 4 && (
+                        <div className="mt-4 rounded-md border border-primary bg-primary-subtle px-4 py-3">
+                          <p className="text-[12.5px] text-primary-ink">
+                            Dette er kjernen i det vi kaller <span className="font-semibold">Bevismotoren</span>:
+                            systemet gjetter aldri. Det dokumenterer hver påstand til kilden, begrunner hver
+                            vurdering, og sier tydelig fra når noe mangler.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-[17px] font-semibold text-ink">{step.title}</h2>
-                    <p className="mt-2 text-[14.5px] leading-relaxed text-ink-soft">{step.body}</p>
-                    {step.n === 4 && (
-                      <div className="mt-4 rounded-md border border-primary bg-primary-subtle px-4 py-3">
-                        <p className="text-[12.5px] text-primary-ink">
-                          Dette er kjernen i det vi kaller <span className="font-semibold">Bevismotoren</span>:
-                          systemet gjetter aldri. Det dokumenterer hver påstand til kilden, begrunner hver
-                          vurdering, og sier tydelig fra når noe mangler.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+
+            {groupIndex === 1 && (
+              <div className="mt-10 rounded-lg border border-border bg-surface-alt p-6">
+                <p className="text-center text-[13px] font-medium text-ink-soft">
+                  Slik henger det sammen i praksis:
+                </p>
+                <div className="mt-5">
+                  <ProsessFlow />
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

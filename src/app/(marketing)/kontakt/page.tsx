@@ -18,8 +18,15 @@ export default function KontaktPage() {
           </p>
 
           <div className="mt-8 max-w-md rounded-lg border border-border bg-surface-alt p-5">
-            <p className="text-[13.5px] font-semibold text-ink">Gjelder det en konkret sak?</p>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-ink-soft">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-subtle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-4 w-4 text-primary-ink" aria-hidden="true">
+                  <path d="M4 5h16v11H8l-4 4V5Z" />
+                </svg>
+              </div>
+              <p className="text-[13.5px] font-semibold text-ink">Gjelder det en konkret sak?</p>
+            </div>
+            <p className="mt-2.5 text-[13px] leading-relaxed text-ink-soft">
               Er du allerede i gang med en sak, får du raskere svar av{" "}
               <span className="font-medium text-ink">Min saksbehandler</span> inne i saken din --
               den kjenner dokumentene, tidslinjen og status akkurat der og da.

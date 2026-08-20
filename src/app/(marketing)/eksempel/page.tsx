@@ -8,6 +8,14 @@ export const metadata: Metadata = {
   description: "Et gjennomarbeidet, fiktivt eksempel på en sak i SkatteTap.",
 };
 
+const journeySteps = [
+  { href: "#steg-1", label: "Enkel sjekk" },
+  { href: "#steg-2", label: "Full sjekk" },
+  { href: "#steg-3", label: "Levende saksbilde" },
+  { href: "#steg-4", label: "Min saksbehandler" },
+  { href: "#steg-5", label: "Skatteendring" },
+];
+
 export default function EksempelPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-20">
@@ -20,8 +28,22 @@ export default function EksempelPage() {
         realistisk for hvordan en sak beveger seg gjennom SkatteTap.
       </p>
 
-      <div className="mt-12 flex flex-col gap-10">
-        <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+      <nav className="mt-8 flex flex-wrap items-center gap-x-1.5 gap-y-2" aria-label="Stegene i eksempelet">
+        {journeySteps.map((step, i) => (
+          <span key={step.href} className="flex items-center gap-1.5">
+            <a
+              href={step.href}
+              className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-primary hover:text-ink"
+            >
+              {i + 1}. {step.label}
+            </a>
+            {i < journeySteps.length - 1 && <span className="text-ink-faint">→</span>}
+          </span>
+        ))}
+      </nav>
+
+      <div className="mt-8 flex flex-col gap-10">
+        <div id="steg-1" className="scroll-mt-24 rounded-lg border border-border bg-surface p-6 shadow-sm">
           <div className="flex items-center gap-2.5">
             <span className="font-mono text-[12px] text-ink-faint">
               Steg 1
@@ -48,7 +70,7 @@ export default function EksempelPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <div id="steg-2" className="scroll-mt-24 rounded-lg border border-border bg-surface p-6 shadow-sm">
           <div className="flex items-center gap-2.5">
             <span className="font-mono text-[12px] text-ink-faint">
               Steg 2
@@ -73,7 +95,7 @@ export default function EksempelPage() {
           </p>
         </div>
 
-        <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <div id="steg-3" className="scroll-mt-24 rounded-lg border border-border bg-surface p-6 shadow-sm">
           <div className="flex items-center gap-2.5">
             <span className="font-mono text-[12px] text-ink-faint">Steg 3</span>
             <h2 className="text-[16px] font-semibold text-ink">Levende saksbilde</h2>
@@ -95,7 +117,7 @@ export default function EksempelPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <div id="steg-4" className="scroll-mt-24 rounded-lg border border-border bg-surface p-6 shadow-sm">
           <div className="flex items-center gap-2.5">
             <span className="font-mono text-[12px] text-ink-faint">Steg 4</span>
             <h2 className="text-[16px] font-semibold text-ink">Min saksbehandler</h2>
@@ -119,7 +141,7 @@ export default function EksempelPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <div id="steg-5" className="scroll-mt-24 rounded-lg border border-border bg-surface p-6 shadow-sm">
           <div className="flex items-center gap-2.5">
             <span className="font-mono text-[12px] text-ink-faint">
               Steg 5
