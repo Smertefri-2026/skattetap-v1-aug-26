@@ -23,6 +23,12 @@ export interface DocumentCaseAnalysisInput {
   otherDocuments: CaseContextDocument[];
 }
 
+export interface DocumentGap {
+  description: string;
+  importance: string;
+  recommendedDocument: string | null;
+}
+
 export interface DocumentCaseAnalysisOutput {
   keyPoints: string[];
   credibility: "high" | "medium" | "low";
@@ -30,7 +36,7 @@ export interface DocumentCaseAnalysisOutput {
   contradictsClaimIndices: number[];
   supportsClaimIndices: number[];
   relatedDocumentIndices: number[];
-  documentGaps: string[];
+  documentGaps: DocumentGap[];
   recommendedNextDocuments: string[];
 }
 
@@ -47,7 +53,16 @@ const responseSchema = z
     contradicts_claim_numbers: z.array(z.number().int()).max(10).catch([]),
     supports_claim_numbers: z.array(z.number().int()).max(10).catch([]),
     related_document_numbers: z.array(z.number().int()).max(10).catch([]),
-    document_gaps: z.array(z.string().min(1).max(200)).max(5).catch([]),
+    document_gaps: z
+      .array(
+        z.object({
+          description: z.string().min(1).max(200),
+          importance: z.string().min(1).max(200),
+          recommended_document: z.string().min(1).max(150).nullable().catch(null),
+        })
+      )
+      .max(5)
+      .catch([]),
     recommended_next_documents: z.array(z.string().min(1).max(200)).max(5).catch([]),
   })
   .transform((raw) => ({
@@ -57,7 +72,11 @@ const responseSchema = z
     contradictsClaimIndices: raw.contradicts_claim_numbers,
     supportsClaimIndices: raw.supports_claim_numbers,
     relatedDocumentIndices: raw.related_document_numbers,
-    documentGaps: raw.document_gaps,
+    documentGaps: raw.document_gaps.map((g) => ({
+      description: g.description,
+      importance: g.importance,
+      recommendedDocument: g.recommended_document,
+    })),
     recommendedNextDocuments: raw.recommended_next_documents,
   }));
 
@@ -112,12 +131,13 @@ Du skal:
 - Vurdere dokumentets troverdighet (high/medium/low) med en kort begrunnelse -- offisielle vedtak og kontoutskrifter er normalt mer troverdige enn uformelle notater.
 - Identifisere hvilke EKSISTERENDE fakta (nummerert liste under) dette dokumentet støtter, og hvilke det motsier. Bruk KUN numrene fra listen -- finn du ingen, la listen være tom.
 - Identifisere hvilke ANDRE dokumenter (nummerert liste under) dette dokumentet henger sammen med.
-- Peke på konkrete mangler ved DETTE dokumentet (ikke saken generelt), og konkret hvilke(t) dokument(er) som ville styrket saken hvis brukeren skaffet dem.
+- Peke på konkrete mangler ved DETTE dokumentet (ikke saken generelt). For hver mangel: hva som mangler, HVORFOR det er viktig for saken, og om mulig hvilket konkret dokument som ville tettet den.
+- I tillegg: konkret hvilke(t) dokument(er) som generelt ville styrket saken hvis brukeren skaffet dem.
 
 Du dikter ALDRI opp fakta, beløp eller sammenhenger som ikke faktisk støttes av teksten under. Er du usikker, si det -- ikke gjett.
 
 Svar alltid som gyldig JSON med nøyaktig disse feltene:
-{"key_points": string[], "credibility": "high"|"medium"|"low", "credibility_reasoning": string, "contradicts_claim_numbers": number[], "supports_claim_numbers": number[], "related_document_numbers": number[], "document_gaps": string[], "recommended_next_documents": string[]}`;
+{"key_points": string[], "credibility": "high"|"medium"|"low", "credibility_reasoning": string, "contradicts_claim_numbers": number[], "supports_claim_numbers": number[], "related_document_numbers": number[], "document_gaps": [{"description": string, "importance": string, "recommended_document": string | null}], "recommended_next_documents": string[]}`;
 
 export const documentCaseAnalysisEngine = defineAiEngine<
   DocumentCaseAnalysisInput,

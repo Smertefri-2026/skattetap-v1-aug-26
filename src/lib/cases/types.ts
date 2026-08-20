@@ -6,6 +6,14 @@ export type CaseStage =
   | "strategisk-utredning";
 export type CaseStatus = "apen" | "under_arbeid" | "fullfort" | "arkivert";
 
+export type NextActionType =
+  | "upload_document"
+  | "resolve_conflict"
+  | "generate_report"
+  | "purchase_upgrade"
+  | "talk_to_advisor"
+  | "provide_information";
+
 export interface Case {
   id: string;
   title: string;
@@ -17,4 +25,8 @@ export interface Case {
   status: CaseStatus;
   created_at: string;
   updated_at: string;
+  next_action: string | null;
+  next_action_reasoning: string | null;
+  next_action_type: NextActionType | null;
+  next_action_computed_at: string | null;
 }

@@ -3,6 +3,7 @@ import { CaseTimelineView } from "./CaseTimelineView";
 import { DocumentInsightList } from "./DocumentInsightList";
 import { DocumentUploadForm } from "./DocumentUploadForm";
 import { DocumentationGapsList } from "./DocumentationGapsList";
+import { NextActionCard } from "./NextActionCard";
 import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
 import { buildCaseTimeline } from "@/lib/cases/timeline";
 import type { Case } from "@/lib/cases/types";
@@ -30,7 +31,7 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
     getClaimsWithStatus(supabase, caseData.id),
     supabase
       .from("documentation_gaps")
-      .select("id, description, suggested_action, status")
+      .select("id, description, suggested_action, status, importance, recommended_document, claim_id")
       .eq("case_id", caseData.id)
       .order("created_at", { ascending: false }),
   ]);
@@ -41,8 +42,22 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
   const conflicting = claims.filter((c) => c.status === "conflicting").length;
   const undocumented = claims.filter((c) => c.status === "undocumented").length;
 
+  const claimStatementById = new Map(claims.map((c) => [c.id, c.statement]));
+  const gapsWithClaimContext = (gaps ?? []).map((g) => ({
+    ...g,
+    affected_claim_statement: g.claim_id ? (claimStatementById.get(g.claim_id) ?? null) : null,
+  }));
+
   return (
     <div className="flex flex-col gap-8">
+      <NextActionCard
+        caseId={caseData.id}
+        stage={caseData.stage}
+        action={caseData.next_action}
+        reasoning={caseData.next_action_reasoning}
+        actionType={caseData.next_action_type}
+      />
+
       <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
         <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
           Saken akkurat nå
@@ -69,7 +84,7 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
         </div>
       </section>
 
-      <section>
+      <section id="dokumenter">
         <h2 className="text-[16px] font-semibold text-ink">Dokumenter</h2>
         <div className="mt-4">
           <DocumentUploadForm caseId={caseData.id} />
@@ -86,7 +101,7 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
         </div>
       </section>
 
-      <section>
+      <section id="fakta">
         <h2 className="text-[16px] font-semibold text-ink">Fakta og påstander</h2>
         <div className="mt-4">
           <ClaimsList claims={claims} caseId={caseData.id} />
@@ -96,7 +111,7 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
       <section>
         <h2 className="text-[16px] font-semibold text-ink">Dokumentasjonshull</h2>
         <div className="mt-4">
-          <DocumentationGapsList caseId={caseData.id} gaps={gaps ?? []} />
+          <DocumentationGapsList caseId={caseData.id} gaps={gapsWithClaimContext} />
         </div>
       </section>
     </div>

@@ -2,12 +2,16 @@
 
 import { Badge, Button } from "@/components/design-system";
 import { reopenDocumentationGap, resolveDocumentationGap } from "@/lib/documentationGaps/actions";
+import { DocumentUploadForm } from "./DocumentUploadForm";
 
 export interface DocumentationGapRow {
   id: string;
   description: string;
   suggested_action: string;
   status: "open" | "resolved";
+  importance: string | null;
+  recommended_document: string | null;
+  affected_claim_statement: string | null;
 }
 
 export function DocumentationGapsList({
@@ -31,21 +35,35 @@ export function DocumentationGapsList({
   return (
     <div className="flex flex-col gap-3">
       {open.map((gap) => (
-        <div
-          key={gap.id}
-          className="flex items-start justify-between gap-3 rounded-md border border-border bg-surface p-4"
-        >
-          <div className="flex-1">
-            <Badge tone="warning">Åpent</Badge>
-            <p className="mt-2 text-[13.5px] text-ink">{gap.description}</p>
-            <p className="mt-1 text-[12.5px] text-ink-soft">Forslag: {gap.suggested_action}</p>
+        <div key={gap.id} className="rounded-md border border-border bg-surface p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <Badge tone="warning">Åpent</Badge>
+              <p className="mt-2 text-[13.5px] font-medium text-ink">{gap.description}</p>
+              {gap.importance && (
+                <p className="mt-1 text-[12.5px] text-ink-soft">Hvorfor det er viktig: {gap.importance}</p>
+              )}
+              {gap.affected_claim_statement && (
+                <p className="mt-1 text-[12.5px] text-ink-faint">
+                  Gjelder: {gap.affected_claim_statement}
+                </p>
+              )}
+              {gap.recommended_document && (
+                <p className="mt-1.5 text-[12.5px] font-medium text-primary-ink">
+                  Anbefalt dokument: {gap.recommended_document}
+                </p>
+              )}
+            </div>
           </div>
-          <form action={resolveDocumentationGap.bind(null, caseId)}>
-            <input type="hidden" name="gapId" value={gap.id} />
-            <Button type="submit" variant="secondary">
-              Merk som løst
-            </Button>
-          </form>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <DocumentUploadForm caseId={caseId} />
+            <form action={resolveDocumentationGap.bind(null, caseId)}>
+              <input type="hidden" name="gapId" value={gap.id} />
+              <Button type="submit" variant="secondary">
+                Merk som løst
+              </Button>
+            </form>
+          </div>
         </div>
       ))}
 

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DocumentExtraction } from "@/lib/ai/documentExtraction";
 import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
+import { refreshNextAction } from "@/lib/cases/refreshNextAction";
 import {
   documentCaseAnalysisEngine,
   sanitizeAnalysisIndices,
@@ -90,11 +91,32 @@ export async function runDocumentCaseAnalysis(
           credibility: output.credibility,
           credibility_reasoning: output.credibilityReasoning,
           related_document_ids: output.relatedDocumentIndices.map((i) => otherDocs[i - 1].id),
-          document_gaps: output.documentGaps,
+          document_gaps: output.documentGaps.map((g) => ({
+            description: g.description,
+            importance: g.importance,
+            recommended_document: g.recommendedDocument,
+          })),
           recommended_next_documents: output.recommendedNextDocuments,
         },
       })
       .eq("id", input.documentId);
+
+    // Feed this document's own gaps into the same operative worklist that
+    // Komplett sak's case-level gap analysis already writes to -- one
+    // table, two sources, so the gaps list is populated from the first
+    // uploaded document, not only after a Komplett sak purchase.
+    for (const gap of output.documentGaps) {
+      await supabase.from("documentation_gaps").insert({
+        case_id: input.caseId,
+        description: gap.description,
+        suggested_action: gap.recommendedDocument
+          ? `Last opp: ${gap.recommendedDocument}`
+          : gap.description,
+        importance: gap.importance,
+        recommended_document: gap.recommendedDocument,
+        source_document_id: input.documentId,
+      });
+    }
 
     for (const claimIndex of output.contradictsClaimIndices) {
       const claim = priorClaims[claimIndex - 1];
@@ -119,6 +141,8 @@ export async function runDocumentCaseAnalysis(
         relationship: "supports",
       });
     }
+
+    await refreshNextAction(supabase, input.caseId, input.userId);
 
     return output;
   } catch {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DocumentationGapsList } from "./DocumentationGapsList";
 import { GenerateKomplettSakButton } from "./GenerateKomplettSakButton";
+import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
 import type { Case } from "@/lib/cases/types";
 import { komplettSakStateFromReport } from "@/lib/reports/reportQueries";
 import type { KomplettSakReportContent, Report } from "@/lib/reports/types";
@@ -9,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function KomplettSakWorkbench({ caseData }: { caseData: Case }) {
   const supabase = await createClient();
 
-  const [{ data: latestReport }, { data: gaps }] = await Promise.all([
+  const [{ data: latestReport }, { data: gaps }, claims] = await Promise.all([
     supabase
       .from("reports")
       .select("*")
@@ -20,10 +21,17 @@ export async function KomplettSakWorkbench({ caseData }: { caseData: Case }) {
       .maybeSingle(),
     supabase
       .from("documentation_gaps")
-      .select("id, description, suggested_action, status")
+      .select("id, description, suggested_action, status, importance, recommended_document, claim_id")
       .eq("case_id", caseData.id)
       .order("created_at", { ascending: false }),
+    getClaimsWithStatus(supabase, caseData.id),
   ]);
+
+  const claimStatementById = new Map(claims.map((c) => [c.id, c.statement]));
+  const gapsWithClaimContext = (gaps ?? []).map((g) => ({
+    ...g,
+    affected_claim_statement: g.claim_id ? (claimStatementById.get(g.claim_id) ?? null) : null,
+  }));
 
   return (
     <div className="flex flex-col gap-8">
@@ -58,7 +66,7 @@ export async function KomplettSakWorkbench({ caseData }: { caseData: Case }) {
           Dokumentasjonshull
         </p>
         <div className="mt-3">
-          <DocumentationGapsList caseId={caseData.id} gaps={gaps ?? []} />
+          <DocumentationGapsList caseId={caseData.id} gaps={gapsWithClaimContext} />
         </div>
       </section>
     </div>

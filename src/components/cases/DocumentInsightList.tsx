@@ -11,7 +11,11 @@ export interface DocumentInsightRow {
     key_points?: string[];
     credibility?: "high" | "medium" | "low";
     credibility_reasoning?: string;
-    document_gaps?: string[];
+    document_gaps?: {
+      description: string;
+      importance: string;
+      recommended_document: string | null;
+    }[];
     recommended_next_documents?: string[];
   } | null;
 }
@@ -82,10 +86,11 @@ export function DocumentInsightList({ documents }: { documents: DocumentInsightR
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-warning-ink">
                   Mangler ved dette dokumentet
                 </p>
-                <ul className="mt-1 flex flex-col gap-0.5">
+                <ul className="mt-1 flex flex-col gap-1.5">
                   {analysis.document_gaps.map((gap, i) => (
                     <li key={i} className="text-[12.5px] text-ink-soft">
-                      • {gap}
+                      • {gap.description}
+                      <span className="block text-[12px] text-ink-faint">{gap.importance}</span>
                     </li>
                   ))}
                 </ul>

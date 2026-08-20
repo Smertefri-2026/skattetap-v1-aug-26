@@ -2,22 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/requireUser";
-import { createClient } from "@/lib/supabase/server";
-
-async function assertCaseOwnership(caseId: string) {
-  const user = await requireUser();
-  const supabase = await createClient();
-  const { data: caseRow } = await supabase
-    .from("cases")
-    .select("id, user_id")
-    .eq("id", caseId)
-    .single();
-  if (!caseRow || caseRow.user_id !== user.id) {
-    throw new Error("Fant ikke saken.");
-  }
-  return supabase;
-}
+import { assertCaseOwnership } from "@/lib/cases/assertCaseOwnership";
+import { refreshNextAction } from "@/lib/cases/refreshNextAction";
 
 export async function resolveDocumentationGap(caseId: string, formData: FormData) {
   const gapId = z.string().uuid().parse(formData.get("gapId"));
@@ -28,6 +14,7 @@ export async function resolveDocumentationGap(caseId: string, formData: FormData
     .update({ status: "resolved", resolved_at: new Date().toISOString() })
     .eq("id", gapId)
     .eq("case_id", caseId);
+  await refreshNextAction(supabase, caseId);
   revalidatePath(`/min-side/saker/${caseId}`);
 }
 
@@ -40,5 +27,6 @@ export async function reopenDocumentationGap(caseId: string, formData: FormData)
     .update({ status: "open", resolved_at: null })
     .eq("id", gapId)
     .eq("case_id", caseId);
+  await refreshNextAction(supabase, caseId);
   revalidatePath(`/min-side/saker/${caseId}`);
 }
