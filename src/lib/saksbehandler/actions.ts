@@ -3,8 +3,11 @@
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/requireUser";
 import { createClient } from "@/lib/supabase/server";
-import { buildSaksbehandlerContext } from "./context";
-import { saksbehandlerChatEngine } from "./chatEngine";
+import { buildSaksbehandlerContext, type SaksbehandlerNextAction } from "./context";
+import { saksbehandlerChatEngine, sanitizeChatReferences } from "./chatEngine";
+import { resolveChatReferences, type ResolvedChatReference } from "./resolveReferences";
+
+export type { ResolvedChatReference } from "./resolveReferences";
 
 const MAX_HISTORY_MESSAGES = 12;
 
@@ -43,7 +46,8 @@ export interface SendMessageResult {
   answer: string;
   needsEscalation: boolean;
   escalationReason: string | null;
-  suggestedNextStep: string | null;
+  references: ResolvedChatReference[];
+  nextAction: SaksbehandlerNextAction | null;
   canEscalate: boolean;
 }
 
@@ -81,6 +85,8 @@ export async function sendMessage(caseId: string, question: string): Promise<Sen
     { supabase, caseId, userId: user.id }
   );
 
+  const references = resolveChatReferences(sanitizeChatReferences(result.references, context), context, caseId);
+
   const { data: assistantMessage, error: insertAssistantError } = await supabase
     .from("messages")
     .insert({
@@ -88,6 +94,7 @@ export async function sendMessage(caseId: string, question: string): Promise<Sen
       role: "assistant",
       content: result.answer,
       needs_escalation: result.needsEscalation,
+      reference_links: references,
     })
     .select("id")
     .single();
@@ -104,7 +111,8 @@ export async function sendMessage(caseId: string, question: string): Promise<Sen
     answer: result.answer,
     needsEscalation: result.needsEscalation,
     escalationReason: result.escalationReason,
-    suggestedNextStep: result.suggestedNextStep,
+    references,
+    nextAction: context.nextAction,
     canEscalate: context.hasPaidEntitlement,
   };
 }

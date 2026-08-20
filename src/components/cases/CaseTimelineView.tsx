@@ -35,7 +35,7 @@ export function CaseTimelineView({ timeline }: { timeline: CaseTimeline }) {
       {events.length > 0 && (
         <ol className="flex flex-col gap-4 border-l-2 border-border pl-5">
           {events.map((event) => (
-            <li key={event.documentId} className="relative">
+            <li key={event.documentId} id={`tidslinje-${event.documentId}`} className="relative">
               <span className="absolute -left-[26px] top-1 h-3 w-3 rounded-full border-2 border-surface bg-primary" />
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[12.5px] font-semibold text-ink-faint">

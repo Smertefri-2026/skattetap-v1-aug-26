@@ -54,7 +54,7 @@ export function DocumentInsightList({ documents }: { documents: DocumentInsightR
         const analysis = doc.case_analysis;
 
         return (
-          <li key={doc.id} className="rounded-md border border-border bg-surface p-4">
+          <li key={doc.id} id={`dokument-${doc.id}`} className="rounded-md border border-border bg-surface p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-[13.5px] font-medium text-ink">{doc.original_filename}</p>
               <div className="flex items-center gap-2">

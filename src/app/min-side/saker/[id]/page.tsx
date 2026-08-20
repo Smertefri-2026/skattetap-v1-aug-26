@@ -68,7 +68,7 @@ export default async function CaseWorkspacePage({
 
       <div className="mt-8 flex flex-col gap-8 lg:flex-row">
         <div className="flex-1">
-          {showSaksbehandler && <SaksbehandlerTab caseId={caseData.id} />}
+          {showSaksbehandler && <SaksbehandlerTab caseData={caseData} />}
           {showSaksbilde && <SaksbildeView caseData={caseData} />}
           {!showSaksbehandler && !showSaksbilde && (
             <>

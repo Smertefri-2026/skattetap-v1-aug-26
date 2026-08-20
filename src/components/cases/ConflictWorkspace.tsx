@@ -63,7 +63,7 @@ function ConflictSide({
 
 function ConflictCard({ conflict, caseId }: { conflict: ConflictPair; caseId: string }) {
   return (
-    <div className="rounded-md border border-border bg-surface p-4">
+    <div id={`konflikt-${conflict.id}`} className="rounded-md border border-border bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         {conflict.status === "open" && <Badge tone="warning">Åpen konflikt</Badge>}
         {conflict.status === "marked_unclear" && <Badge tone="neutral">Uavklart</Badge>}

@@ -35,7 +35,7 @@ export function DocumentationGapsList({
   return (
     <div className="flex flex-col gap-3">
       {open.map((gap) => (
-        <div key={gap.id} className="rounded-md border border-border bg-surface p-4">
+        <div key={gap.id} id={`hull-${gap.id}`} className="rounded-md border border-border bg-surface p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <Badge tone="warning">Åpent</Badge>

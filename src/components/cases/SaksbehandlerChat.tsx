@@ -1,30 +1,93 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/design-system";
-import { requestEscalation, sendMessage } from "@/lib/saksbehandler/actions";
+import { nextActionCta } from "@/lib/cases/nextActionCta";
+import { requestEscalation, sendMessage, type ResolvedChatReference } from "@/lib/saksbehandler/actions";
+import type { SaksbehandlerNextAction } from "@/lib/saksbehandler/context";
+import type { CaseStage } from "@/lib/cases/types";
 import type { SaksbehandlerMessage } from "./SaksbehandlerTab";
 
 type EscalationState = "idle" | "sending" | "sent" | "denied";
 
+const referenceTypeLabel: Record<ResolvedChatReference["type"], string> = {
+  document: "Dokument",
+  timeline: "Tidslinje",
+  conflict: "Konflikt",
+  gap: "Dokumentasjonshull",
+  report: "Rapport",
+};
+
+function ReferenceChips({ references }: { references: ResolvedChatReference[] }) {
+  if (references.length === 0) return null;
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {references.map((ref, i) => (
+        <Link
+          key={i}
+          href={ref.href}
+          className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-surface px-2.5 py-1 text-[11.5px] font-medium text-ink-soft hover:border-primary hover:text-primary-ink"
+        >
+          <span className="text-ink-faint">{referenceTypeLabel[ref.type]}:</span> {ref.label}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function NextActionStrip({
+  caseId,
+  caseStage,
+  nextAction,
+}: {
+  caseId: string;
+  caseStage: CaseStage;
+  nextAction: SaksbehandlerNextAction | null;
+}) {
+  if (!nextAction) return null;
+  const cta = nextActionCta(nextAction.actionType, caseId, caseStage);
+
+  return (
+    <div className="border-b border-border bg-primary-subtle px-5 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-ink">
+        Neste anbefalte handling
+      </p>
+      <p className="mt-1 text-[13px] font-medium text-ink">{nextAction.action}</p>
+      {cta && (
+        <Link href={cta.href} className="mt-1.5 inline-block text-[12.5px] font-medium text-primary-ink hover:underline">
+          {cta.label} →
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export function SaksbehandlerChat({
   caseId,
+  caseStage,
   initialConversationId,
   initialMessages,
+  initialNextAction,
   canEscalate,
 }: {
   caseId: string;
+  caseStage: CaseStage;
   initialConversationId: string | null;
   initialMessages: SaksbehandlerMessage[];
+  initialNextAction: SaksbehandlerNextAction | null;
   canEscalate: boolean;
 }) {
   const [conversationId, setConversationId] = useState(initialConversationId);
   const [messages, setMessages] = useState<SaksbehandlerMessage[]>(initialMessages);
+  const [nextAction, setNextAction] = useState(initialNextAction);
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [escalationState, setEscalationState] = useState<EscalationState>("idle");
   const [escalationNote, setEscalationNote] = useState<string | null>(null);
+  const [escalationReason, setEscalationReason] = useState<string | null>(null);
 
   const lastAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant");
 
@@ -37,12 +100,14 @@ export function SaksbehandlerChat({
     setError(null);
     setEscalationState("idle");
     setEscalationNote(null);
+    setEscalationReason(null);
 
     const optimisticUserMessage: SaksbehandlerMessage = {
       id: `optimistic-${Date.now()}`,
       role: "user",
       content: userQuestion,
       needsEscalation: false,
+      references: [],
     };
     setMessages((prev) => [...prev, optimisticUserMessage]);
     setSending(true);
@@ -50,6 +115,8 @@ export function SaksbehandlerChat({
     try {
       const result = await sendMessage(caseId, userQuestion);
       setConversationId(result.conversationId);
+      setNextAction(result.nextAction);
+      setEscalationReason(result.escalationReason);
       setMessages((prev) => [
         ...prev,
         {
@@ -57,6 +124,7 @@ export function SaksbehandlerChat({
           role: "assistant",
           content: result.answer,
           needsEscalation: result.needsEscalation,
+          references: result.references,
         },
       ]);
     } catch {
@@ -90,9 +158,11 @@ export function SaksbehandlerChat({
       <div className="border-b border-border px-5 py-4">
         <p className="text-[14px] font-semibold text-ink">Min saksbehandler</p>
         <p className="mt-0.5 text-[12.5px] text-ink-faint">
-          Kjenner saken din -- fakta, dokumentasjon og status.
+          Kjenner hele saken -- dokumenter, tidslinje, konflikter, dokumentasjonshull og rapporter.
         </p>
       </div>
+
+      <NextActionStrip caseId={caseId} caseStage={caseStage} nextAction={nextAction} />
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {messages.length === 0 ? (
@@ -105,7 +175,7 @@ export function SaksbehandlerChat({
             {messages.map((m) => (
               <li
                 key={m.id}
-                className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
+                className={m.role === "user" ? "flex justify-end" : "flex flex-col items-start"}
               >
                 <div
                   className={
@@ -116,6 +186,7 @@ export function SaksbehandlerChat({
                 >
                   {m.content}
                 </div>
+                {m.role === "assistant" && <ReferenceChips references={m.references} />}
               </li>
             ))}
           </ul>
@@ -126,7 +197,8 @@ export function SaksbehandlerChat({
       {lastAssistantMessage?.needsEscalation && escalationState !== "sent" && (
         <div className="border-t border-border bg-warning-subtle px-5 py-3">
           <p className="text-[13px] text-warning-ink">
-            Dette spørsmålet krever manuell vurdering. Ønsker du at en rådgiver skal se på saken?
+            {escalationReason ?? "Dette spørsmålet krever manuell vurdering."} Ønsker du at en rådgiver skal se på
+            saken?
           </p>
           {canEscalate ? (
             <Button
