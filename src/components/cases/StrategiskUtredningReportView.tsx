@@ -1,4 +1,5 @@
 import { Badge } from "@/components/design-system";
+import type { BadgeTone } from "@/components/design-system";
 import type { Report, StrategiskUtredningReportContent } from "@/lib/reports/types";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -24,6 +25,20 @@ function BulletList({ items, empty }: { items: string[]; empty: string }) {
     </ul>
   );
 }
+
+const patternTypeTone: Record<string, BadgeTone> = {
+  gjentakende_fradrag: "info",
+  gjentakende_konflikt: "warning",
+  gjentakende_mangel: "warning",
+  annet: "neutral",
+};
+
+const patternTypeLabel: Record<string, string> = {
+  gjentakende_fradrag: "Gjentakende fradrag",
+  gjentakende_konflikt: "Gjentakende konflikt",
+  gjentakende_mangel: "Gjentakende mangel",
+  annet: "Mønster",
+};
 
 export function StrategiskUtredningReportView({
   report,
@@ -64,6 +79,19 @@ export function StrategiskUtredningReportView({
         </ul>
       </Section>
 
+      {c.included_cases.length <= 1 && (
+        <div className="rounded-md border border-warning bg-warning-subtle p-4">
+          <p className="text-[13px] font-medium text-warning-ink">
+            Denne utredningen bygger kun på denne ene saken.
+          </p>
+          <p className="mt-1 text-[12.5px] text-warning-ink">
+            Mønstre og sammenligninger under har begrenset grunnlag når det ikke finnes andre
+            saker å sammenligne med. Fristvurdering, økonomisk eksponering og strategier for
+            denne ene saken er fortsatt fullverdige.
+          </p>
+        </div>
+      )}
+
       <Section title="Dine egne opplysninger">
         <BulletList
           items={c.user_explanations.map((u) => `${u.case_title}: ${u.explanation}`)}
@@ -85,11 +113,22 @@ export function StrategiskUtredningReportView({
         />
       </Section>
 
-      <Section title="Mønstre på tvers av saker og år">
-        <BulletList
-          items={c.patterns.map((p) => `${p.description} (${p.case_titles.join(", ")})`)}
-          empty="Ingen gjentakende mønstre identifisert."
-        />
+      <Section title="Mønstre og gjentatte feil på tvers av saker og år">
+        {c.patterns.length === 0 ? (
+          <p className="text-[13px] text-ink-faint">Ingen gjentakende mønstre identifisert.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {c.patterns.map((p) => (
+              <div key={p.description} className="rounded-md border border-border p-3">
+                <Badge tone={patternTypeTone[p.pattern_type] ?? "neutral"}>
+                  {patternTypeLabel[p.pattern_type] ?? p.pattern_type}
+                </Badge>
+                <p className="mt-1.5 text-[13px] text-ink-soft">{p.description}</p>
+                <p className="mt-1 text-[12px] text-ink-faint">Gjelder: {p.case_titles.join(", ")}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </Section>
 
       <Section title="Sammenligninger">
@@ -122,12 +161,17 @@ export function StrategiskUtredningReportView({
       </Section>
 
       <Section title="Samlet økonomisk eksponering">
-        <p className="text-[13.5px] font-semibold text-ink">
-          {c.financial_exposure.total_amount_kr.toLocaleString("no-NO")} kr samlet
-        </p>
-        <div className="mt-2">
+        <div className="rounded-md bg-primary-subtle p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-ink">Samlet</p>
+          <p className="mt-0.5 text-[22px] font-semibold text-ink">
+            {c.financial_exposure.total_amount_kr.toLocaleString("no-NO")} kr
+          </p>
+        </div>
+        <div className="mt-3">
           <BulletList
-            items={c.financial_exposure.breakdown_by_case.map((b) => `${b.case_title}: ${b.amount_kr} kr`)}
+            items={c.financial_exposure.breakdown_by_case.map(
+              (b) => `${b.case_title}: ${b.amount_kr.toLocaleString("no-NO")} kr`
+            )}
             empty="Ingen beløp identifisert."
           />
         </div>
@@ -178,10 +222,22 @@ export function StrategiskUtredningReportView({
       </Section>
 
       <Section title="Prioriterte saker">
-        <BulletList
-          items={c.prioritized_cases.map((p) => `${p.case_title}: ${p.reasoning}`)}
-          empty="Ingen prioritering gjort ennå."
-        />
+        {c.prioritized_cases.length === 0 ? (
+          <p className="text-[13px] text-ink-faint">Ingen prioritering gjort ennå.</p>
+        ) : (
+          <ol className="flex flex-col gap-2">
+            {c.prioritized_cases.map((p, i) => (
+              <li key={p.case_title} className="flex items-start gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white">
+                  {i + 1}
+                </span>
+                <span className="text-[13px] text-ink-soft">
+                  <span className="font-medium text-ink">{p.case_title}</span> — {p.reasoning}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
       </Section>
 
       <Section title="Antakelser denne utredningen bygger på">
