@@ -1,5 +1,4 @@
-import { getProductByCode } from "@/lib/products/catalog";
-import { hasAccess } from "@/lib/products/entitlement";
+import { getUpgradeQuote } from "@/lib/products/entitlement";
 import { createClient } from "@/lib/supabase/server";
 import { PurchasePrompt } from "./PurchasePrompt";
 
@@ -15,19 +14,16 @@ export async function PurchaseGate({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const [granted, product] = await Promise.all([
-    hasAccess(supabase, caseId, productCode),
-    getProductByCode(supabase, productCode),
-  ]);
+  const quote = await getUpgradeQuote(supabase, caseId, productCode);
 
-  if (granted) return <>{children}</>;
+  if (quote?.alreadyHasAccess) return <>{children}</>;
 
   return (
     <PurchasePrompt
       caseId={caseId}
       productCode={productCode}
-      productName={product?.name ?? productCode}
-      priceKr={product?.price_kr ?? 0}
+      productName={quote?.product.name ?? productCode}
+      priceKr={quote?.costKr ?? 0}
       checkoutPending={checkoutPending}
     />
   );
