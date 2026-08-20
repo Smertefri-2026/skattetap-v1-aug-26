@@ -48,7 +48,7 @@ export function RegisterForm({ next }: { next?: string } = {}) {
 
     // Threaded through two redirect hops (auth/confirm -> konto-bekreftet)
     // that this form doesn't control, so the intended destination -- e.g.
-    // /min-side?produkt=full-sjekk from the homepage's product ladder --
+    // /utsjekk?produkt=full-sjekk from the homepage's product ladder --
     // survives the async email-confirmation gap. Each hop's own next=
     // param decodes what the previous hop encoded, so this needs exactly
     // two levels of encodeURIComponent, not one.
