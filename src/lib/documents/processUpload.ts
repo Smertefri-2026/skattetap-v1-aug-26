@@ -91,6 +91,12 @@ export async function processDocumentUpload(
       })
       .eq("id", document.id);
 
+    // Aligned 1:1 with extraction.possible_facts (null where the insert
+    // failed) so the case-context analysis pass below can map its
+    // own_fact_number references back to the exact claim it means, instead
+    // of guessing from insertion-order timestamps.
+    const ownClaimIds: (string | null)[] = [];
+
     for (const fact of extraction.possible_facts) {
       const { data: claim, error: claimError } = await supabase
         .from("claims")
@@ -102,7 +108,10 @@ export async function processDocumentUpload(
         })
         .select("id")
         .single();
-      if (claimError || !claim) continue;
+      if (claimError || !claim) {
+        ownClaimIds.push(null);
+        continue;
+      }
 
       await supabase.from("evidence_links").insert({
         claim_id: claim.id,
@@ -117,6 +126,7 @@ export async function processDocumentUpload(
         assessed_by: "system",
       });
 
+      ownClaimIds.push(claim.id);
       claimsCreated += 1;
     }
 
@@ -125,6 +135,7 @@ export async function processDocumentUpload(
       documentId: document.id,
       fileName: input.fileName,
       extraction,
+      ownClaimIds,
       userId: input.userId,
     });
   } catch {

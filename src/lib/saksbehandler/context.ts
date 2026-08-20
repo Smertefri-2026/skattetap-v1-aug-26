@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getCaseConflicts } from "@/lib/cases/conflicts";
 import { getDocumentationSummary } from "@/lib/cases/documentationSummary";
 import { summarizeCase } from "@/lib/cases/crossCaseSummaries";
 import { getCaseEntitlement } from "@/lib/products/entitlement";
@@ -17,6 +18,7 @@ export interface SaksbehandlerContext {
   totalAmountKr: number;
   documentedFacts: string[];
   gaps: string[];
+  openConflicts: { statementA: string; statementB: string; clarifyingQuestion: string }[];
   applicableRules: { rule_code: string; law_reference: string; provision: string; short_explanation: string }[];
   documentCount: number;
   documentsBeingProcessed: number;
@@ -38,10 +40,11 @@ export async function buildSaksbehandlerContext(
     throw new Error("Fant ikke saken.");
   }
 
-  const [summary, documentation, entitlement] = await Promise.all([
+  const [summary, documentation, entitlement, conflicts] = await Promise.all([
     summarizeCase(supabase, caseRow, true),
     getDocumentationSummary(supabase, caseId),
     getCaseEntitlement(supabase, caseId),
+    getCaseConflicts(supabase, caseId),
   ]);
 
   return {
@@ -51,6 +54,13 @@ export async function buildSaksbehandlerContext(
     totalAmountKr: summary.total_amount_kr,
     documentedFacts: summary.top_documented_facts,
     gaps: summary.key_gaps,
+    openConflicts: conflicts
+      .filter((c) => c.status === "open")
+      .map((c) => ({
+        statementA: c.claimA.statement,
+        statementB: c.claimB.statement,
+        clarifyingQuestion: c.clarifyingQuestion,
+      })),
     applicableRules: summary.applicable_rules,
     documentCount: documentation.documentCount,
     documentsBeingProcessed: documentation.extractingCount,

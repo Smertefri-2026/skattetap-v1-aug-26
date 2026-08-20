@@ -79,7 +79,9 @@ export async function refreshNextAction(
         caseTitle: caseRow.title,
         documentedFacts: claims.filter((c) => c.status === "documented").map((c) => c.statement),
         undocumentedFacts: claims.filter((c) => c.status === "undocumented").map((c) => c.statement),
-        conflicts: conflicts.map((c) => ({ statementA: c.claimA.statement, statementB: c.claimB.statement })),
+        conflicts: conflicts
+          .filter((c) => c.status === "open")
+          .map((c) => ({ statementA: c.claimA.statement, statementB: c.claimB.statement })),
         openGaps: (gaps ?? []).map((g) => ({
           description: g.description,
           importance: g.importance ?? "Ikke spesifisert.",

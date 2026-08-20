@@ -13,6 +13,10 @@ export interface RunCaseAnalysisInput {
   documentId: string;
   fileName: string;
   extraction: DocumentExtraction;
+  /** Claim ids created from extraction.possible_facts, same order, null
+   * where that fact's claim insert failed. Lets a contradiction's
+   * own_fact_number resolve to the exact claim it means. */
+  ownClaimIds: (string | null)[];
   userId?: string;
 }
 
@@ -81,7 +85,12 @@ export async function runDocumentCaseAnalysis(
       { supabase, caseId: input.caseId, userId: input.userId }
     );
 
-    const output = sanitizeAnalysisIndices(rawOutput, priorClaims.length, otherDocs.length);
+    const output = sanitizeAnalysisIndices(
+      rawOutput,
+      priorClaims.length,
+      otherDocs.length,
+      input.extraction.possible_facts.length
+    );
 
     await supabase
       .from("documents")
@@ -118,8 +127,11 @@ export async function runDocumentCaseAnalysis(
       });
     }
 
-    for (const claimIndex of output.contradictsClaimIndices) {
-      const claim = priorClaims[claimIndex - 1];
+    for (const contradiction of output.contradictions) {
+      const claim = priorClaims[contradiction.claimIndex - 1];
+      const ownClaimId = input.ownClaimIds[contradiction.ownFactIndex - 1] ?? null;
+      const reasoning = `"${input.fileName}" inneholder opplysninger som motsier dette.`;
+
       await supabase.from("evidence_links").insert({
         claim_id: claim.id,
         document_id: input.documentId,
@@ -128,9 +140,23 @@ export async function runDocumentCaseAnalysis(
       await supabase.from("claim_assessments").insert({
         claim_id: claim.id,
         status: "conflicting",
-        reasoning: `"${input.fileName}" inneholder opplysninger som motsier dette.`,
+        reasoning,
         assessed_by: "ai",
       });
+
+      // Only when the counter-claim was actually created can the exact
+      // pair be recorded -- if its own insert failed, the claim-level
+      // conflict above still stands, it just can't be paired precisely.
+      if (ownClaimId) {
+        await supabase.from("case_conflicts").insert({
+          case_id: input.caseId,
+          claim_a_id: claim.id,
+          claim_b_id: ownClaimId,
+          reasoning,
+          clarifying_question: contradiction.clarifyingQuestion,
+          recommended_document: contradiction.recommendedDocument,
+        });
+      }
     }
 
     for (const claimIndex of output.supportsClaimIndices) {

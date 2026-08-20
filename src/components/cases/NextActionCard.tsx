@@ -11,7 +11,7 @@ function ctaFor(
     case "upload_document":
       return { label: "Last opp dokument", href: `/min-side/saker/${caseId}#dokumenter` };
     case "resolve_conflict":
-      return { label: "Se motstridende fakta", href: `/min-side/saker/${caseId}#fakta` };
+      return { label: "Avklar konflikten", href: `/min-side/saker/${caseId}#konflikter` };
     case "generate_report":
     case "purchase_upgrade":
       return { label: "Gå videre", href: `/min-side/saker/${caseId}?steg=${stage}` };

@@ -46,6 +46,13 @@ function formatContext(context: SaksbehandlerContext): string {
     "Kjente dokumentasjonshull:",
     ...(context.gaps.length > 0 ? context.gaps.map((g) => `- ${g}`) : ["(ingen kjente hull)"]),
     "",
+    "Åpne konflikter mellom dokumenter (uavklart hvem som har rett):",
+    ...(context.openConflicts.length > 0
+      ? context.openConflicts.map(
+          (c) => `- "${c.statementA}" motsier "${c.statementB}" -- avklares ved: ${c.clarifyingQuestion}`
+        )
+      : ["(ingen åpne konflikter)"]),
+    "",
     "Relevant regelverk:",
     ...(context.applicableRules.length > 0
       ? context.applicableRules.map((r) => `- ${r.rule_code} (${r.law_reference}): ${r.short_explanation}`)
@@ -58,8 +65,9 @@ function formatContext(context: SaksbehandlerContext): string {
 const SYSTEM_PROMPT_INSTRUCTIONS = `Du er Skattetap sin digitale saksbehandler for én konkret sak.
 
 Du skal:
-- Svare kun basert på fakta, hull og regelverk som faktisk er oppgitt om saken under.
+- Svare kun basert på fakta, hull, konflikter og regelverk som faktisk er oppgitt om saken under.
 - Alltid forklare KORT hvorfor du mener det du mener, med henvisning til de konkrete fakta/dokumentasjonshullene.
+- Hvis saken har en åpen konflikt som er relevant for spørsmålet: nevn den eksplisitt og pek på hva som avklarer den, i stedet for å late som fakta er sikkert.
 - Foreslå ett konkret neste steg når det er naturlig.
 - ALDRI gjette eller finne opp fakta, beløp eller regelverk som ikke står i konteksten.
 

@@ -1,9 +1,11 @@
 import { ClaimsList } from "./ClaimsList";
 import { CaseTimelineView } from "./CaseTimelineView";
+import { ConflictWorkspace } from "./ConflictWorkspace";
 import { DocumentInsightList } from "./DocumentInsightList";
 import { DocumentUploadForm } from "./DocumentUploadForm";
 import { DocumentationGapsList } from "./DocumentationGapsList";
 import { NextActionCard } from "./NextActionCard";
+import { getCaseConflicts } from "@/lib/cases/conflicts";
 import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
 import { buildCaseTimeline } from "@/lib/cases/timeline";
 import type { Case } from "@/lib/cases/types";
@@ -22,7 +24,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function SaksbildeView({ caseData }: { caseData: Case }) {
   const supabase = await createClient();
 
-  const [{ data: documents }, claims, { data: gaps }] = await Promise.all([
+  const [{ data: documents }, claims, { data: gaps }, conflicts] = await Promise.all([
     supabase
       .from("documents")
       .select("id, original_filename, extraction_status, rejection_reason, ai_extraction, case_analysis")
@@ -34,6 +36,7 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
       .select("id, description, suggested_action, status, importance, recommended_document, claim_id")
       .eq("case_id", caseData.id)
       .order("created_at", { ascending: false }),
+    getCaseConflicts(supabase, caseData.id),
   ]);
 
   const timeline = await buildCaseTimeline(supabase, caseData.id, caseData.tax_period);
@@ -71,10 +74,10 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
             <p className="text-[20px] font-semibold text-ink">{undocumented}</p>
             <p className="text-[12px] text-ink-soft">udokumenterte fakta</p>
           </div>
-          <div>
+          <a href="#konflikter" className="hover:opacity-80">
             <p className="text-[20px] font-semibold text-warning-ink">{conflicting}</p>
             <p className="text-[12px] text-ink-soft">motstridende fakta</p>
-          </div>
+          </a>
           <div>
             <p className="text-[20px] font-semibold text-ink">
               {gaps?.filter((g) => g.status === "open").length ?? 0}
@@ -105,6 +108,17 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
         <h2 className="text-[16px] font-semibold text-ink">Fakta og påstander</h2>
         <div className="mt-4">
           <ClaimsList claims={claims} caseId={caseData.id} />
+        </div>
+      </section>
+
+      <section id="konflikter">
+        <h2 className="text-[16px] font-semibold text-ink">Konflikter</h2>
+        <p className="mt-1.5 max-w-2xl text-[13px] text-ink-soft">
+          Her ligger hver motsigelse Evidence Engine har funnet mellom dokumentene i saken, én og én: hvilken
+          påstand som strider mot hvilken, hvorfor, og hva som konkret avklarer den.
+        </p>
+        <div className="mt-4">
+          <ConflictWorkspace caseId={caseData.id} conflicts={conflicts} />
         </div>
       </section>
 
