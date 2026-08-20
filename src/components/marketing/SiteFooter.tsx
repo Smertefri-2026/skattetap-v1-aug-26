@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Wordmark } from "@/components/marketing/Wordmark";
 
 const columns = [
   {
@@ -30,8 +31,8 @@ export function SiteFooter() {
     <footer className="border-t border-white/10 bg-ink">
       <div className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-14 sm:flex-row sm:justify-between">
         <div className="max-w-xs">
-          <p className="text-[15px] font-semibold text-white">
-            Skattetap<span className="text-primary">.no</span>
+          <p>
+            <Wordmark tone="on-dark" className="text-[15px]" />
           </p>
           <p className="mt-3 text-[13px] leading-relaxed text-white/60">
             Skattetap gir deg en strukturert vurdering av saken din basert på
