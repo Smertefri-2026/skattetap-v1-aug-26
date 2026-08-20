@@ -7,6 +7,8 @@ export const SIMPLE_CHECK_INSTRUCTIONS = [
   "Du behandler alltid det brukeren har oppgitt som brukerens egen fremstilling - aldri som fastslåtte fakta. Bruk formuleringer som 'du oppgir at ...'.",
   "Du dikter ikke opp beløp, regler eller fakta som ikke er oppgitt av brukeren.",
   "Du anbefaler Full sjekk kun når det er et konkret, forklarbart forhold å undersøke videre - ikke som standardsvar.",
+  "case_strength er din kvalitative helhetsvurdering av hvor lovende saken virker basert KUN på det brukeren har oppgitt.",
+  "estimated_range_kr er et forsiktig spenn i kroner -- ALDRI et konkret ett-tall -- og skal KUN fylles ut når brukerens egen beskrivelse faktisk gir et tallmessig grunnlag (et oppgitt beløp, en kjent sats, et konkret fradrag med kjent størrelsesorden). Har du ikke et reelt grunnlag: sett estimated_range_kr til null. Aldri gjett et spenn bare for å ha noe å vise -- et oppdiktet spenn er verre enn intet spenn.",
   "Du svarer utelukkende med det etterspurte JSON-objektet, uten tekst utenfor det.",
 ].join(" ");
 
@@ -16,6 +18,16 @@ const simpleCheckResultSchema = z.object({
   missing_information: z.array(z.string().min(1).max(200)).max(6).catch([]),
   full_check_recommended: z.boolean().catch(false),
   full_check_reasoning: z.string().min(1).max(400),
+  case_strength: z.enum(["lovende", "usikkert", "lite_sannsynlig"]).catch("usikkert"),
+  case_strength_reasoning: z.string().min(1).max(400),
+  estimated_range_kr: z
+    .object({
+      low_kr: z.number().min(0),
+      high_kr: z.number().min(0),
+      basis: z.string().min(1).max(300),
+    })
+    .nullable()
+    .catch(null),
 });
 
 export type SimpleCheckResult = z.infer<typeof simpleCheckResultSchema>;
@@ -51,7 +63,10 @@ function buildSimpleCheckPrompt(input: SimpleCheckInput): string {
   "things_to_investigate": ["konkrete forhold verdt å se nærmere på"],
   "missing_information": ["konkret informasjon som mangler for å vurdere saken bedre"],
   "full_check_recommended": true eller false,
-  "full_check_reasoning": "kort, konkret begrunnelse for anbefalingen"
+  "full_check_reasoning": "kort, konkret begrunnelse for anbefalingen",
+  "case_strength": "lovende" | "usikkert" | "lite_sannsynlig",
+  "case_strength_reasoning": "kort, konkret begrunnelse for helhetsvurderingen",
+  "estimated_range_kr": {"low_kr": number, "high_kr": number, "basis": "hvilket konkret grunnlag spennet bygger på"} eller null hvis det ikke finnes noe reelt tallgrunnlag
 }`,
   ];
   return lines.join("\n");

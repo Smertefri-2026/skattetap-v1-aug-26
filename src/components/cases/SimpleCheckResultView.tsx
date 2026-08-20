@@ -1,6 +1,19 @@
 import Link from "next/link";
 import { Badge } from "@/components/design-system";
+import type { BadgeTone } from "@/components/design-system";
 import type { SimpleCheckResult } from "@/lib/ai/simpleCheck";
+
+const strengthTone: Record<SimpleCheckResult["case_strength"], BadgeTone> = {
+  lovende: "success",
+  usikkert: "warning",
+  lite_sannsynlig: "neutral",
+};
+
+const strengthLabel: Record<SimpleCheckResult["case_strength"], string> = {
+  lovende: "Lovende",
+  usikkert: "Usikkert",
+  lite_sannsynlig: "Lite sannsynlig",
+};
 
 export function SimpleCheckResultView({
   result,
@@ -11,12 +24,32 @@ export function SimpleCheckResultView({
 }) {
   return (
     <div className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-6 shadow-sm">
-      <div>
-        <Badge tone="info">KI-vurdering</Badge>
-        <p className="mt-3 text-[14.5px] leading-relaxed text-ink">
-          {result.understood_summary}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Badge tone="info">KI-vurdering</Badge>
+          <p className="mt-3 text-[14.5px] leading-relaxed text-ink">{result.understood_summary}</p>
+        </div>
+        {result.estimated_range_kr && (
+          <div className="shrink-0 rounded-md bg-primary-subtle px-4 py-3 text-right">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-ink">Mulig spenn</p>
+            <p className="mt-0.5 text-[20px] font-semibold text-ink">
+              {result.estimated_range_kr.low_kr.toLocaleString("no-NO")}–
+              {result.estimated_range_kr.high_kr.toLocaleString("no-NO")} kr
+            </p>
+          </div>
+        )}
       </div>
+
+      {result.case_strength && (
+        <div className="flex flex-wrap items-center gap-2.5 rounded-md bg-surface-alt p-4">
+          <Badge tone={strengthTone[result.case_strength]}>{strengthLabel[result.case_strength]}</Badge>
+          <p className="text-[13.5px] text-ink-soft">{result.case_strength_reasoning}</p>
+        </div>
+      )}
+
+      {result.estimated_range_kr && (
+        <p className="text-[12px] text-ink-faint">Grunnlag for spennet: {result.estimated_range_kr.basis}</p>
+      )}
 
       {result.things_to_investigate.length > 0 && (
         <div>
