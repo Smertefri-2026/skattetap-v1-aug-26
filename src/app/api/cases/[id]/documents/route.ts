@@ -40,6 +40,7 @@ export async function POST(
       fileName: file.name,
       mimeType: file.type || "application/octet-stream",
       bytes: await file.arrayBuffer(),
+      userId: user.id,
     });
     return NextResponse.json(result);
   } catch {

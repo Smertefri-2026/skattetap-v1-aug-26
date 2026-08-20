@@ -5,6 +5,7 @@ import { FullCheckWorkbench } from "@/components/cases/FullCheckWorkbench";
 import { KomplettSakWorkbench } from "@/components/cases/KomplettSakWorkbench";
 import { PurchaseGate } from "@/components/cases/PurchaseGate";
 import { SaksbehandlerTab } from "@/components/cases/SaksbehandlerTab";
+import { SaksbildeView } from "@/components/cases/SaksbildeView";
 import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
 import { SkatteendringWorkbench } from "@/components/cases/SkatteendringWorkbench";
 import { StrategiskUtredningWorkbench } from "@/components/cases/StrategiskUtredningWorkbench";
@@ -38,12 +39,23 @@ export default async function CaseWorkspacePage({
 
   const activeStage: CaseStage = isStage(steg) ? steg : caseData.stage;
   const showSaksbehandler = steg === "saksbehandler";
+  const showSaksbilde = !showSaksbehandler && (!steg || steg === "saksbilde");
   const documentation = await getDocumentationSummary(supabase, caseData.id);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold text-ink">{caseData.title}</h1>
+        <div className="flex flex-col gap-1">
+          {!showSaksbilde && (
+            <Link
+              href={`/min-side/saker/${caseData.id}`}
+              className="text-[12.5px] font-medium text-ink-faint hover:text-ink-soft"
+            >
+              ← Tilbake til saksbildet
+            </Link>
+          )}
+          <h1 className="text-2xl font-semibold text-ink">{caseData.title}</h1>
+        </div>
         {!showSaksbehandler && (
           <Link
             href={`/min-side/saker/${caseData.id}?steg=saksbehandler`}
@@ -57,7 +69,8 @@ export default async function CaseWorkspacePage({
       <div className="mt-8 flex flex-col gap-8 lg:flex-row">
         <div className="flex-1">
           {showSaksbehandler && <SaksbehandlerTab caseId={caseData.id} />}
-          {!showSaksbehandler && (
+          {showSaksbilde && <SaksbildeView caseData={caseData} />}
+          {!showSaksbehandler && !showSaksbilde && (
             <>
               {activeStage === "enkel-sjekk" && <SimpleCheckWorkbench caseData={caseData} />}
               {activeStage === "full-sjekk" && (

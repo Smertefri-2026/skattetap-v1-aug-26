@@ -30,7 +30,7 @@ export async function CasesTab() {
           {cases.map((c) => (
             <li key={c.id}>
               <Link
-                href={`/min-side/saker/${c.id}?steg=${c.stage}`}
+                href={`/min-side/saker/${c.id}`}
                 className="flex items-center justify-between rounded-lg border border-border bg-surface p-5 shadow-sm hover:border-border-strong"
               >
                 <div>

@@ -1,0 +1,104 @@
+import { ClaimsList } from "./ClaimsList";
+import { CaseTimelineView } from "./CaseTimelineView";
+import { DocumentInsightList } from "./DocumentInsightList";
+import { DocumentUploadForm } from "./DocumentUploadForm";
+import { DocumentationGapsList } from "./DocumentationGapsList";
+import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
+import { buildCaseTimeline } from "@/lib/cases/timeline";
+import type { Case } from "@/lib/cases/types";
+import { createClient } from "@/lib/supabase/server";
+
+/**
+ * The living case picture: one continuously-updated view of everything
+ * known about a case, assembled from data every existing engine already
+ * writes (documents, claims, claim_assessments, evidence_links,
+ * documentation_gaps) plus the document-level case_analysis pass. Nothing
+ * here is generated on demand the way a report is -- it just reflects
+ * whatever is true about the case right now. Reports remain a separate,
+ * point-in-time export of a slice of this same state, not the other way
+ * around.
+ */
+export async function SaksbildeView({ caseData }: { caseData: Case }) {
+  const supabase = await createClient();
+
+  const [{ data: documents }, claims, { data: gaps }] = await Promise.all([
+    supabase
+      .from("documents")
+      .select("id, original_filename, extraction_status, rejection_reason, ai_extraction, case_analysis")
+      .eq("case_id", caseData.id)
+      .order("uploaded_at", { ascending: false }),
+    getClaimsWithStatus(supabase, caseData.id),
+    supabase
+      .from("documentation_gaps")
+      .select("id, description, suggested_action, status")
+      .eq("case_id", caseData.id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const timeline = await buildCaseTimeline(supabase, caseData.id, caseData.tax_period);
+
+  const documented = claims.filter((c) => c.status === "documented").length;
+  const conflicting = claims.filter((c) => c.status === "conflicting").length;
+  const undocumented = claims.filter((c) => c.status === "undocumented").length;
+
+  return (
+    <div className="flex flex-col gap-8">
+      <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
+        <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
+          Saken akkurat nå
+        </p>
+        <div className="mt-3 flex flex-wrap gap-6">
+          <div>
+            <p className="text-[20px] font-semibold text-ink">{documented}</p>
+            <p className="text-[12px] text-ink-soft">dokumenterte fakta</p>
+          </div>
+          <div>
+            <p className="text-[20px] font-semibold text-ink">{undocumented}</p>
+            <p className="text-[12px] text-ink-soft">udokumenterte fakta</p>
+          </div>
+          <div>
+            <p className="text-[20px] font-semibold text-warning-ink">{conflicting}</p>
+            <p className="text-[12px] text-ink-soft">motstridende fakta</p>
+          </div>
+          <div>
+            <p className="text-[20px] font-semibold text-ink">
+              {gaps?.filter((g) => g.status === "open").length ?? 0}
+            </p>
+            <p className="text-[12px] text-ink-soft">åpne dokumentasjonshull</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-[16px] font-semibold text-ink">Dokumenter</h2>
+        <div className="mt-4">
+          <DocumentUploadForm caseId={caseData.id} />
+        </div>
+        <div className="mt-4">
+          <DocumentInsightList documents={documents ?? []} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-[16px] font-semibold text-ink">Tidslinje</h2>
+        <div className="mt-4">
+          <CaseTimelineView timeline={timeline} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-[16px] font-semibold text-ink">Fakta og påstander</h2>
+        <div className="mt-4">
+          <ClaimsList claims={claims} caseId={caseData.id} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-[16px] font-semibold text-ink">Dokumentasjonshull</h2>
+        <div className="mt-4">
+          <DocumentationGapsList caseId={caseData.id} gaps={gaps ?? []} />
+        </div>
+      </section>
+    </div>
+  );
+}

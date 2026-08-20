@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { analyzeDocument } from "@/lib/ai/documentExtraction";
 import { extractDocumentText } from "./extractDocumentText";
+import { runDocumentCaseAnalysis } from "./runCaseAnalysis";
 
 function sanitizeFilename(name: string) {
   return name.replace(/[^a-zA-Z0-9.\-_]/g, "_").slice(-120);
@@ -11,6 +12,7 @@ export interface ProcessUploadInput {
   fileName: string;
   mimeType: string;
   bytes: ArrayBuffer;
+  userId?: string;
 }
 
 export interface ProcessUploadResult {
@@ -117,6 +119,14 @@ export async function processDocumentUpload(
 
       claimsCreated += 1;
     }
+
+    await runDocumentCaseAnalysis(supabase, {
+      caseId: input.caseId,
+      documentId: document.id,
+      fileName: input.fileName,
+      extraction,
+      userId: input.userId,
+    });
   } catch {
     aiRejectionReason = "KI-analysen av dokumentet feilet. Teksten er likevel lagret.";
     await supabase
