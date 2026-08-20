@@ -1,4 +1,10 @@
+import { stageOrder } from "@/lib/cases/labels";
 import type { CaseStage } from "@/lib/cases/types";
+
+/** The four paid tiers, in order -- stageOrder without enkel-sjekk (free,
+ * never sold through a checkout). Shared so /utsjekk's product list and
+ * its enkel-sjekk redirect guard can't drift apart. */
+export const paidStageOrder: CaseStage[] = stageOrder.filter((s) => s !== "enkel-sjekk");
 
 /**
  * Single source of truth for where a product-tier CTA points, shared by

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Badge, Card } from "@/components/design-system";
-import { stageLabels, stageOrder } from "@/lib/cases/labels";
+import { stageLabels } from "@/lib/cases/labels";
 import type { CaseStage } from "@/lib/cases/types";
+import { paidStageOrder } from "@/lib/products/purchaseLinks";
 
 const descriptions: Record<CaseStage, string> = {
   "enkel-sjekk": "Svar på noen få spørsmål om saken din. Gratis, og du får en vurdering med en gang.",
@@ -51,16 +52,16 @@ export function CheckoutProductPicker({
             window.location.href = `/utsjekk?produkt=${e.target.value}${sak ? `&sak=${sak}` : ""}`;
           }}
         >
-          {stageOrder.map((stage) => (
+          {paidStageOrder.map((stage) => (
             <option key={stage} value={stage}>
-              {stageLabels[stage]} — {stage === "enkel-sjekk" ? "Gratis" : `${(priceByStage[stage] ?? 0).toLocaleString("no-NO")} kr`}
+              {stageLabels[stage]} — {(priceByStage[stage] ?? 0).toLocaleString("no-NO")} kr
             </option>
           ))}
         </select>
       </div>
 
       <div className="hidden flex-col gap-2 sm:flex">
-        {stageOrder.map((stage) => {
+        {paidStageOrder.map((stage) => {
           const isSelected = stage === selected;
           const href = `/utsjekk?produkt=${stage}${sak ? `&sak=${sak}` : ""}`;
           return (
@@ -69,7 +70,7 @@ export function CheckoutProductPicker({
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13.5px] font-semibold text-ink">{stageLabels[stage]}</span>
                   <span className="text-[13px] font-medium text-ink-faint">
-                    {stage === "enkel-sjekk" ? "Gratis" : `${(priceByStage[stage] ?? 0).toLocaleString("no-NO")} kr`}
+                    {(priceByStage[stage] ?? 0).toLocaleString("no-NO")} kr
                   </span>
                 </div>
               </Card>
@@ -79,10 +80,10 @@ export function CheckoutProductPicker({
       </div>
 
       <div className="mt-2 rounded-lg border border-primary bg-primary-subtle p-5">
-        <Badge tone="info">{selected === "enkel-sjekk" ? "Gratis" : "Enkeltkjøp"}</Badge>
+        <Badge tone="info">Enkeltkjøp</Badge>
         <h3 className="mt-3 text-[19px] font-semibold text-ink">{stageLabels[selected]}</h3>
         <p className="text-[14px] font-medium text-ink-faint">
-          {selected === "enkel-sjekk" ? "Gratis" : `${(priceByStage[selected] ?? 0).toLocaleString("no-NO")} kr`}
+          {(priceByStage[selected] ?? 0).toLocaleString("no-NO")} kr
         </p>
         <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink-soft">{descriptions[selected]}</p>
         <ul className="mt-4 flex flex-col gap-1.5">

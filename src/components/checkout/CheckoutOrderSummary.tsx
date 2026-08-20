@@ -22,7 +22,9 @@ function kr(n: number) {
 }
 
 /**
- * Column 3. Pricing is never recomputed here -- product.price_kr and
+ * Column 3. Always represents a paid product -- /utsjekk redirects
+ * enkel-sjekk elsewhere before this ever renders (see the page
+ * component). Pricing is never recomputed here -- product.price_kr and
  * costKr both come straight from the server's getUpgradeQuote() call
  * (see the page component); this only formats/derives display lines
  * ("tidligere kjøpt verdi" = price_kr - costKr) and handles the angrerett
@@ -30,7 +32,6 @@ function kr(n: number) {
  * already makes.
  */
 export function CheckoutOrderSummary({
-  isFree,
   isLoggedIn,
   productLabel,
   product,
@@ -38,7 +39,6 @@ export function CheckoutOrderSummary({
   alreadyHasAccess,
   costKr,
 }: {
-  isFree: boolean;
   isLoggedIn: boolean;
   productLabel: string;
   product: Product | null;
@@ -69,27 +69,6 @@ export function CheckoutOrderSummary({
       setError(body.error ?? "Kunne ikke starte betaling. Prøv igjen.");
       setLoading(false);
     }
-  }
-
-  if (isFree) {
-    return (
-      <div className="flex flex-col gap-4">
-        <Line label="Enkel sjekk" value="Gratis" />
-        <p className="text-[13px] text-ink-soft">Ingen betaling nødvendig for å komme i gang.</p>
-        {isLoggedIn && caseId ? (
-          <Link
-            href={`/min-side/saker/${caseId}`}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-[18px] py-[10px] text-sm font-semibold text-white hover:bg-primary-ink"
-          >
-            Gå til saken
-          </Link>
-        ) : (
-          <p className="text-[13px] text-ink-faint">
-            {isLoggedIn ? "Velg eller opprett en sak til venstre for å fortsette." : "Opprett konto eller logg inn for å starte."}
-          </p>
-        )}
-      </div>
-    );
   }
 
   const priceKr = product?.price_kr ?? 0;

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { CheckoutAuthPanel } from "@/components/checkout/CheckoutAuthPanel";
 import { CheckoutCasePicker } from "@/components/checkout/CheckoutCasePicker";
 import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary";
 import { CheckoutProductPicker } from "@/components/checkout/CheckoutProductPicker";
-import { stageOrder } from "@/lib/cases/labels";
+import { stageLabels } from "@/lib/cases/labels";
 import type { CaseStage } from "@/lib/cases/types";
 import { getProducts } from "@/lib/products/catalog";
 import { getUpgradeQuote } from "@/lib/products/entitlement";
+import { getPurchaseHref, paidStageOrder } from "@/lib/products/purchaseLinks";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -44,8 +46,8 @@ export const metadata: Metadata = {
   description: "Velg pakke, bekreft konto og betal -- alt på én side.",
 };
 
-function isStage(value: string | undefined): value is CaseStage {
-  return stageOrder.includes(value as CaseStage);
+function isPaidStage(value: string | undefined): value is CaseStage {
+  return paidStageOrder.includes(value as CaseStage);
 }
 
 export default async function UtsjekkPage({
@@ -54,32 +56,40 @@ export default async function UtsjekkPage({
   searchParams: Promise<{ produkt?: string; sak?: string }>;
 }) {
   const params = await searchParams;
-  const produkt: CaseStage = isStage(params.produkt) ? params.produkt : "full-sjekk";
-  const isFree = produkt === "enkel-sjekk";
 
   const supabase = await createClient();
-  const [{ data: userData }, products] = await Promise.all([supabase.auth.getUser(), getProducts(supabase)]);
+  const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
+
+  // Enkel sjekk is free and never sold through this checkout -- send a
+  // direct visit to the same free entry point the homepage's product
+  // ladder already uses, instead of showing a payment page for a
+  // product that costs nothing.
+  if (params.produkt === "enkel-sjekk") {
+    redirect(getPurchaseHref("enkel-sjekk", !!user));
+  }
+
+  const produkt: CaseStage = isPaidStage(params.produkt) ? params.produkt : "full-sjekk";
+
+  const products = await getProducts(supabase);
   const priceByStage = Object.fromEntries(products.map((p) => [p.product_code, p.price_kr])) as Partial<
     Record<CaseStage, number>
   >;
   const product = products.find((p) => p.product_code === produkt) ?? null;
 
   let cases: { id: string; title: string }[] = [];
-  let profileName: string | null = null;
   if (user) {
-    const [{ data: caseRows }, { data: profile }] = await Promise.all([
-      supabase.from("cases").select("id, title").order("updated_at", { ascending: false }),
-      supabase.from("profiles").select("first_name").eq("id", user.id).maybeSingle(),
-    ]);
+    const { data: caseRows } = await supabase
+      .from("cases")
+      .select("id, title")
+      .order("updated_at", { ascending: false });
     cases = caseRows ?? [];
-    profileName = profile?.first_name ?? null;
   }
 
   const selectedCaseId = params.sak && cases.some((c) => c.id === params.sak) ? params.sak : undefined;
 
   let quote: Awaited<ReturnType<typeof getUpgradeQuote>> = null;
-  if (!isFree && selectedCaseId) {
+  if (selectedCaseId) {
     quote = await getUpgradeQuote(supabase, selectedCaseId, produkt);
   }
 
@@ -115,7 +125,6 @@ export default async function UtsjekkPage({
                 cases={cases}
                 selectedCaseId={selectedCaseId}
                 email={user.email ?? ""}
-                name={profileName}
               />
             ) : (
               <CheckoutAuthPanel next={next} />
@@ -128,9 +137,8 @@ export default async function UtsjekkPage({
           <h2 className="mt-1 text-[19px] font-semibold text-ink">Ordresammendrag</h2>
           <div className="mt-4 rounded-lg border border-border bg-surface p-5 shadow-sm">
             <CheckoutOrderSummary
-              isFree={isFree}
               isLoggedIn={!!user}
-              productLabel={product?.name ?? "Enkel sjekk"}
+              productLabel={product?.name ?? stageLabels[produkt]}
               product={product}
               caseId={selectedCaseId}
               alreadyHasAccess={quote?.alreadyHasAccess}
