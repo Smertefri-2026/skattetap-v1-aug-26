@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Wordmark } from "@/components/marketing/Wordmark";
+import { getPurchaseHref } from "@/lib/products/purchaseLinks";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/slik-fungerer-det", label: "Slik fungerer det" },
@@ -30,8 +32,26 @@ function XIcon() {
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  // Starts false so the server-rendered and first client render match
+  // exactly (no hydration mismatch) -- flips to true right after mount if
+  // there's an active session. This keeps every marketing page fully
+  // static (no per-request cookie read in the layout just to know this
+  // one boolean); the tradeoff is a brief logged-out flash for returning
+  // logged-in visitors before the check resolves.
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const menuId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const enkelSjekkHref = getPurchaseHref("enkel-sjekk", isLoggedIn);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data.user));
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+    return () => subscription.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -66,13 +86,13 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-3">
           <Link
-            href="/logg-inn"
+            href={isLoggedIn ? "/min-side" : "/logg-inn"}
             className="text-[13.5px] font-semibold text-white/80 hover:text-white"
           >
-            Logg inn
+            {isLoggedIn ? "Min side" : "Logg inn"}
           </Link>
           <Link
-            href="/logg-inn?tab=registrer"
+            href={enkelSjekkHref}
             className="hidden rounded-md bg-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-primary-ink md:inline-flex"
           >
             Start enkel sjekk
@@ -108,7 +128,7 @@ export function SiteHeader() {
               ))}
             </nav>
             <Link
-              href="/logg-inn?tab=registrer"
+              href={enkelSjekkHref}
               onClick={() => setOpen(false)}
               className="mt-3 flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-primary-ink"
             >
