@@ -3,6 +3,11 @@ import { nextActionCta } from "@/lib/cases/nextActionCta";
 import type { CaseStage } from "@/lib/cases/types";
 import type { NextActionType } from "@/lib/cases/nextActionEngine";
 
+export interface OtherOpenItem {
+  label: string;
+  href: string;
+}
+
 export function NextActionCard({
   caseId,
   stage,
@@ -10,6 +15,7 @@ export function NextActionCard({
   reasoning,
   actionType,
   singleOpenGapId,
+  otherOpenItems,
 }: {
   caseId: string;
   stage: CaseStage;
@@ -17,6 +23,7 @@ export function NextActionCard({
   reasoning: string | null;
   actionType: NextActionType | null;
   singleOpenGapId?: string;
+  otherOpenItems?: OtherOpenItem[];
 }) {
   if (!action) {
     return null;
@@ -38,6 +45,23 @@ export function NextActionCard({
         >
           {cta.label}
         </Link>
+      )}
+
+      {otherOpenItems && otherOpenItems.length > 0 && (
+        <div className="mt-4 border-t border-primary/25 pt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-ink">
+            Andre åpne oppgaver
+          </p>
+          <ul className="mt-1.5 flex flex-col gap-1">
+            {otherOpenItems.map((item, i) => (
+              <li key={i}>
+                <Link href={item.href} className="text-[12.5px] font-medium text-primary-ink hover:underline">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   );

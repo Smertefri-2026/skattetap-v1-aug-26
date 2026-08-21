@@ -7,7 +7,6 @@ import { DocumentUploadForm } from "./DocumentUploadForm";
 import { DocumentationGapsList } from "./DocumentationGapsList";
 import { FinancialPotentialCard, type DocumentAmountRow } from "./FinancialPotentialCard";
 import { HashScrollFallback } from "./HashScrollFallback";
-import { NextActionCard } from "./NextActionCard";
 import { ReportHistoryList } from "./ReportHistoryList";
 import { SaksbehandlerTab } from "./SaksbehandlerTab";
 import { getCaseConflicts } from "@/lib/cases/conflicts";
@@ -70,13 +69,6 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
     source_document_filename: g.source_document_id ? (documentFilenameById.get(g.source_document_id) ?? null) : null,
   }));
 
-  // See nextActionCta.ts: the recommendation engine never learns a gap's id,
-  // so a deep link to "the" gap it means is only unambiguous when there's
-  // exactly one open one. More than that, and the CTA falls back to the
-  // general documents section rather than guessing.
-  const openGaps = (gaps ?? []).filter((g) => g.status === "open");
-  const singleOpenGapId = openGaps.length === 1 ? openGaps[0].id : undefined;
-
   const documentAmounts: DocumentAmountRow[] = (documents ?? []).flatMap((d) => {
     const extraction = d.ai_extraction as { amounts?: { label: string; amount_kr: number }[] } | null;
     return (extraction?.amounts ?? []).map((a) => ({
@@ -125,23 +117,12 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
         <SaksbehandlerTab caseData={caseData} />
       </section>
 
-      <NextActionCard
-        caseId={caseData.id}
-        stage={caseData.stage}
-        action={caseData.next_action}
-        reasoning={caseData.next_action_reasoning}
-        actionType={caseData.next_action_type}
-        singleOpenGapId={singleOpenGapId}
-      />
-
-      {/* "Gjeldende regler og rettsgrunnlag" (Fase B) goes here, between
-          Neste anbefalte handling and dokumentasjon/øvrig saksinnhold --
-          not built yet, and deliberately no placeholder section for it. */}
-
-      <FinancialPotentialCard userStatedAmountKr={caseData.amount_kr} documentAmounts={documentAmounts} />
-
       <section id="dokumenter" className="scroll-mt-24">
         <h2 className="text-[16px] font-semibold text-ink">Dokumenter</h2>
+        <p className="mt-1 max-w-2xl text-[13px] text-ink-soft">
+          Uenig i hvordan et dokument er tolket? Si fra til Min saksbehandler, så tar vi det med i
+          vurderingen av saken.
+        </p>
         <div className="mt-4">
           <DocumentUploadForm caseId={caseData.id} />
         </div>
@@ -156,6 +137,10 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
           <CaseTimelineView timeline={timeline} />
         </div>
       </section>
+
+      {/* "Gjeldende regler og rettsgrunnlag" (Fase B) goes here, mellom
+          kronologien og fakta/konflikter -- not built yet, and deliberately
+          no placeholder section for it. */}
 
       <section id="fakta" className="scroll-mt-24">
         <h2 className="text-[16px] font-semibold text-ink">Fakta og påstander</h2>
@@ -181,6 +166,8 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
           <DocumentationGapsList caseId={caseData.id} gaps={gapsWithClaimContext} />
         </div>
       </section>
+
+      <FinancialPotentialCard userStatedAmountKr={caseData.amount_kr} documentAmounts={documentAmounts} />
 
       <section>
         <h2 className="text-[16px] font-semibold text-ink">Rapporthistorikk</h2>

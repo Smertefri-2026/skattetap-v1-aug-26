@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/design-system";
 import { sendMessage, type ResolvedChatReference } from "@/lib/saksbehandler/actions";
 import type { SaksbehandlerMessage } from "./SaksbehandlerTab";
@@ -60,9 +61,21 @@ export function SaksbehandlerChat({
   initialConversationId: string | null;
   initialMessages: SaksbehandlerMessage[];
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [, setConversationId] = useState(initialConversationId);
   const [messages, setMessages] = useState<SaksbehandlerMessage[]>(initialMessages);
-  const [question, setQuestion] = useState("");
+  // "Spør om dette dokumentet" (DocumentInsightList) links here with
+  // ?dokument=<filnavn> instead of a new comment-per-document system -- the
+  // chat already knows every document by filename (see context.ts), so
+  // mentioning it in the message is enough for the AI to ground its answer
+  // on the right one. Read straight into the initial value, not set from
+  // an effect, so it's there on first render already.
+  const [question, setQuestion] = useState(() => {
+    const documentName = searchParams.get("dokument");
+    return documentName ? `Om dokumentet "${documentName}": ` : "";
+  });
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [escalationReason, setEscalationReason] = useState<string | null>(null);
@@ -71,6 +84,25 @@ export function SaksbehandlerChat({
   // shows the tail of it -- "Vis hele samtalen" is an explicit opt-in, not
   // something that creeps open on its own as messages arrive.
   const [expanded, setExpanded] = useState(false);
+
+  const questionInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus + strip the param from the URL once mounted, so a refresh
+  // doesn't re-prefill over whatever the user typed since.
+  useEffect(() => {
+    const documentName = searchParams.get("dokument");
+    if (!documentName) return;
+
+    questionInputRef.current?.focus();
+
+    const params = new URLSearchParams(searchParams);
+    params.delete("dokument");
+    const query = params.toString();
+    router.replace(`${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`, {
+      scroll: false,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const lastAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant");
   const hasOlderMessages = messages.length > COMPACT_VISIBLE_MESSAGES;
@@ -186,22 +218,36 @@ export function SaksbehandlerChat({
       </div>
 
       {expanded ? (
-        <div ref={scrollContainerRef} className="h-[500px] overflow-y-auto px-5 py-4">
-          {messages.length === 0 ? (
-            <p className="text-[13.5px] text-ink-soft">
-              Spør om hva som helst knyttet til denne saken -- status, hva som mangler, eller hva
-              neste steg bør være.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-4">
-              {messages.map((m) => (
-                <MessageBubble key={m.id} message={m} />
-              ))}
-            </ul>
-          )}
-          {sending && <p className="mt-4 text-[12.5px] text-ink-faint">Saksbehandleren svarer...</p>}
-          <div ref={bottomRef} />
-        </div>
+        <>
+          <div ref={scrollContainerRef} className="h-[500px] overflow-y-auto px-5 py-4">
+            {messages.length === 0 ? (
+              <p className="text-[13.5px] text-ink-soft">
+                Spør om hva som helst knyttet til denne saken -- status, hva som mangler, eller hva
+                neste steg bør være.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-4">
+                {messages.map((m) => (
+                  <MessageBubble key={m.id} message={m} />
+                ))}
+              </ul>
+            )}
+            {sending && <p className="mt-4 text-[12.5px] text-ink-faint">Saksbehandleren svarer...</p>}
+            <div ref={bottomRef} />
+          </div>
+          {/* Same action as the one in the header -- repeated here so
+              closing a long conversation never requires scrolling all the
+              way back to the top first. */}
+          <div className="border-t border-border px-5 py-2">
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="text-[12.5px] font-medium text-primary-ink hover:underline"
+            >
+              Vis kompakt visning
+            </button>
+          </div>
+        </>
       ) : (
         <div className="px-5 py-4">
           {messages.length === 0 ? (
@@ -245,6 +291,7 @@ export function SaksbehandlerChat({
 
       <form onSubmit={handleSend} className="flex gap-2 border-t border-border px-5 py-4">
         <input
+          ref={questionInputRef}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="Skriv en melding..."

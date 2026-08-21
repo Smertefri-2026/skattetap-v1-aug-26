@@ -1,45 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Badge, Button } from "@/components/design-system";
 import { markConflictUnclear, reopenConflict, resolveConflict } from "@/lib/cases/conflictActions";
-import { getDocumentDownloadUrl } from "@/lib/documents/getDocumentUrl";
 import type { ConflictPair } from "@/lib/cases/conflicts";
 import { DocumentUploadForm } from "./DocumentUploadForm";
-
-function OpenDocumentButton({
-  caseId,
-  documentId,
-  fileName,
-}: {
-  caseId: string;
-  documentId: string | null;
-  fileName: string | null;
-}) {
-  const [error, setError] = useState<string | null>(null);
-  if (!documentId) return null;
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={async () => {
-          setError(null);
-          try {
-            const url = await getDocumentDownloadUrl(caseId, documentId);
-            window.open(url, "_blank", "noopener,noreferrer");
-          } catch {
-            setError("Kunne ikke åpne dokumentet.");
-          }
-        }}
-        className="text-[12.5px] font-medium text-primary-ink hover:underline"
-      >
-        Åpne {fileName ?? "dokumentet"}
-      </button>
-      {error && <p className="text-[12px] text-danger-ink">{error}</p>}
-    </div>
-  );
-}
+import { OpenDocumentButton } from "./OpenDocumentButton";
 
 function ConflictSide({
   label,
@@ -55,7 +20,11 @@ function ConflictSide({
       <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">{label}</p>
       <p className="mt-1.5 text-[13.5px] text-ink">{side.statement}</p>
       <div className="mt-2">
-        <OpenDocumentButton caseId={caseId} documentId={side.sourceDocumentId} fileName={side.sourceDocumentFileName} />
+        <OpenDocumentButton
+          caseId={caseId}
+          documentId={side.sourceDocumentId}
+          label={`Åpne ${side.sourceDocumentFileName ?? "dokumentet"}`}
+        />
       </div>
     </div>
   );

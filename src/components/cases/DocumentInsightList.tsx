@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { Badge, Button } from "@/components/design-system";
 import type { BadgeTone } from "@/components/design-system";
 import { retryDocumentAnalysis } from "@/lib/documents/retryAnalysis";
+import { OpenDocumentButton } from "./OpenDocumentButton";
 
 export interface DocumentInsightRow {
   id: string;
@@ -185,6 +187,16 @@ export function DocumentInsightList({ documents, caseId }: { documents: Document
                   )}
                   <Badge tone={badge.tone}>{badge.label}</Badge>
                 </div>
+              </div>
+
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                <OpenDocumentButton caseId={caseId} documentId={doc.id} label="Åpne dokument" />
+                <Link
+                  href={`/min-side/saker/${caseId}?steg=saksbilde&dokument=${encodeURIComponent(doc.original_filename)}#saksbehandler`}
+                  className="text-[12.5px] font-medium text-primary-ink hover:underline"
+                >
+                  Spør om dette dokumentet
+                </Link>
               </div>
 
               {doc.extraction_status === "failed" && <FailureNotice doc={doc} caseId={caseId} />}

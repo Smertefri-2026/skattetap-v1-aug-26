@@ -8,9 +8,10 @@ import { SaksbildeView } from "@/components/cases/SaksbildeView";
 import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
 import { SkatteendringWorkbench } from "@/components/cases/SkatteendringWorkbench";
 import { StrategiskUtredningWorkbench } from "@/components/cases/StrategiskUtredningWorkbench";
-import { getDocumentationSummary } from "@/lib/cases/documentationSummary";
+import { getSidebarOpenItems } from "@/lib/cases/openItems";
 import { stageOrder } from "@/lib/cases/labels";
 import type { Case, CaseStage } from "@/lib/cases/types";
+import { getCaseEntitlement } from "@/lib/products/entitlement";
 import { createClient } from "@/lib/supabase/server";
 
 function isStage(value: string | undefined): value is CaseStage {
@@ -45,28 +46,23 @@ export default async function CaseWorkspacePage({
 
   const activeStage: CaseStage = isStage(steg) ? steg : caseData.stage;
   const showSaksbilde = !steg || steg === "saksbilde";
-  const documentation = await getDocumentationSummary(supabase, caseData.id);
+  const [entitlement, sidebarOpenItems] = await Promise.all([
+    getCaseEntitlement(supabase, caseData.id),
+    getSidebarOpenItems(supabase, caseData.id),
+  ]);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-1">
-          {!showSaksbilde && (
-            <Link
-              href={`/min-side/saker/${caseData.id}`}
-              className="text-[12.5px] font-medium text-ink-faint hover:text-ink-soft"
-            >
-              ← Tilbake til saksbildet
-            </Link>
-          )}
-          <h1 className="text-2xl font-semibold text-ink">{caseData.title}</h1>
-        </div>
-        <Link
-          href={`/min-side/saker/${caseData.id}?steg=saksbilde#saksbehandler`}
-          className="self-start rounded-md bg-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-primary-ink sm:shrink-0"
-        >
-          Snakk med Min saksbehandler
-        </Link>
+      <div className="flex flex-col gap-1">
+        {!showSaksbilde && (
+          <Link
+            href={`/min-side/saker/${caseData.id}`}
+            className="text-[12.5px] font-medium text-ink-faint hover:text-ink-soft"
+          >
+            ← Tilbake til saksbildet
+          </Link>
+        )}
+        <h1 className="text-2xl font-semibold text-ink">{caseData.title}</h1>
       </div>
 
       <div className="mt-8 flex flex-col gap-8 lg:flex-row">
@@ -117,7 +113,9 @@ export default async function CaseWorkspacePage({
         <CaseContextPanel
           caseData={caseData}
           activeStage={activeStage}
-          documentation={documentation}
+          entitlement={entitlement}
+          singleOpenGapId={sidebarOpenItems.singleOpenGapId}
+          otherOpenItems={sidebarOpenItems.otherOpenItems}
         />
       </div>
     </main>
