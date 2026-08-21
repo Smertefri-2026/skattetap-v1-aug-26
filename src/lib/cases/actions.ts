@@ -1,8 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/requireUser";
+import { assertCaseOwnership } from "./assertCaseOwnership";
 import { stageOrder } from "./labels";
 import type { CaseStage } from "./types";
 import { createClient } from "@/lib/supabase/server";
@@ -50,4 +52,21 @@ export async function createCase(formData: FormData) {
     redirect(`/utsjekk?produkt=${steg}&sak=${data.id}`);
   }
   redirect(`/min-side/saker/${data.id}?steg=${steg}`);
+}
+
+// Case-level "Papirkurv": reuses the existing, previously-unused
+// "arkivert" status value on cases.status instead of a new soft-delete
+// column, so this never touches the schema. Restoring always lands back
+// on "apen" -- the prior status isn't tracked, and "reopen as active" is
+// the only sensible default for a case someone pulled out of the trash.
+export async function archiveCase(caseId: string) {
+  const supabase = await assertCaseOwnership(caseId);
+  await supabase.from("cases").update({ status: "arkivert" }).eq("id", caseId);
+  revalidatePath("/min-side");
+}
+
+export async function restoreCase(caseId: string) {
+  const supabase = await assertCaseOwnership(caseId);
+  await supabase.from("cases").update({ status: "apen" }).eq("id", caseId);
+  revalidatePath("/min-side");
 }

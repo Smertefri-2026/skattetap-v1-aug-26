@@ -27,7 +27,9 @@ export async function ProfileTab() {
     <div className="flex flex-col gap-8">
       <h2 className="text-[16px] font-semibold text-ink">Min konto</h2>
 
-      <section className="max-w-lg rounded-lg border border-border bg-surface p-6 shadow-sm">
+      <div className="flex flex-col gap-8 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+      <div className="flex flex-col gap-8">
+      <section className="rounded-lg border border-border bg-surface p-6 shadow-sm">
         <p className="text-[14px] font-semibold text-ink">Kontoopplysninger</p>
         <dl className="mt-4 flex flex-col gap-3">
           <div>
@@ -45,7 +47,7 @@ export async function ProfileTab() {
         </dl>
       </section>
 
-      <section className="max-w-lg rounded-lg border border-border bg-surface p-6 shadow-sm">
+      <section className="rounded-lg border border-border bg-surface p-6 shadow-sm">
         <p className="text-[14px] font-semibold text-ink">Personopplysninger</p>
         <form action={updateProfile} className="mt-4 flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
@@ -137,15 +139,17 @@ export async function ProfileTab() {
           </Button>
         </form>
       </section>
+      </div>
 
-      <section className="max-w-lg rounded-lg border border-border bg-surface p-6 shadow-sm">
+      <div className="flex flex-col gap-8">
+      <section className="rounded-lg border border-border bg-surface p-6 shadow-sm">
         <p className="text-[14px] font-semibold text-ink">Bytt passord</p>
         <div className="mt-4">
           <ChangePasswordForm />
         </div>
       </section>
 
-      <section className="max-w-lg rounded-lg border border-border bg-surface p-6 shadow-sm">
+      <section className="rounded-lg border border-border bg-surface p-6 shadow-sm">
         <p className="text-[14px] font-semibold text-ink">Markedsføring</p>
         <form action={updateMarketingConsent} className="mt-4 flex flex-col gap-4">
           <label className="flex items-start gap-2.5 text-[13px] text-ink-soft">
@@ -164,6 +168,8 @@ export async function ProfileTab() {
           </Button>
         </form>
       </section>
+      </div>
+      </div>
     </div>
   );
 }

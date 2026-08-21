@@ -12,7 +12,7 @@ export default async function MinSideLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <MinSideHeader email={user.email ?? ""} isAdmin={isAdmin} />
+      <MinSideHeader isAdmin={isAdmin} />
       <div className="flex-1">{children}</div>
     </div>
   );

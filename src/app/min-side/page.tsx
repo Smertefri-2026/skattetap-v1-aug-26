@@ -3,6 +3,7 @@ import { MinSideTabs } from "@/components/min-side/MinSideTabs";
 import { CasesTab } from "@/components/min-side/CasesTab";
 import { DocumentationTab } from "@/components/min-side/DocumentationTab";
 import { KjopTab } from "@/components/min-side/KjopTab";
+import { PapirkurvTab } from "@/components/min-side/PapirkurvTab";
 import { ProductIntentBanner } from "@/components/min-side/ProductIntentBanner";
 import { ProfileTab } from "@/components/min-side/ProfileTab";
 import { ReportsTab } from "@/components/min-side/ReportsTab";
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: "Min side",
 };
 
-const validTabs = ["saker", "dokumentasjon", "rapporter", "kjop", "profil"] as const;
+const validTabs = ["saker", "dokumentasjon", "rapporter", "kjop", "profil", "papirkurv"] as const;
 type Tab = (typeof validTabs)[number];
 
 function isTab(value: string | undefined): value is Tab {
@@ -36,6 +37,7 @@ export default async function MinSidePage({
         {tab === "rapporter" && <ReportsTab />}
         {tab === "kjop" && <KjopTab />}
         {tab === "profil" && <ProfileTab />}
+        {tab === "papirkurv" && <PapirkurvTab />}
       </div>
     </main>
   );

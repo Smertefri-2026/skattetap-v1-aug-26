@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/design-system";
 import type { BadgeTone } from "@/components/design-system";
+import { RefundRequestButton } from "./RefundRequestButton";
 import { createClient } from "@/lib/supabase/server";
 
 type PurchaseStatus = "pending" | "completed" | "failed" | "canceled" | "refunded";
@@ -25,7 +26,9 @@ export async function KjopTab() {
   const supabase = await createClient();
   const { data: purchases } = await supabase
     .from("purchases")
-    .select("id, amount_kr, status, created_at, case_id, products(name), cases(title)")
+    .select(
+      "id, amount_kr, status, created_at, case_id, stripe_checkout_session_id, stripe_payment_intent_id, products(name), cases(title)"
+    )
     .order("created_at", { ascending: false });
 
   return (
@@ -34,8 +37,13 @@ export async function KjopTab() {
 
       {!purchases || purchases.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface-alt p-8 text-center">
-          <p className="text-[14.5px] text-ink-soft">
-            Kjøpshistorikk og kvitteringer vises her når du har kjøpt noe.
+          <p className="text-[14.5px] font-semibold text-ink">Ingen kjøp ennå</p>
+          <p className="mt-1 text-[13.5px] text-ink-soft">
+            Se{" "}
+            <Link href="/priser" className="font-semibold text-primary hover:underline">
+              prisene våre
+            </Link>{" "}
+            for å komme i gang.
           </p>
         </div>
       ) : (
@@ -46,26 +54,40 @@ export async function KjopTab() {
               (p.products as unknown as { name: string } | null)?.name ?? "Produkt";
             const caseTitle =
               (p.cases as unknown as { title: string } | null)?.title ?? "Sak";
+            const hasReceipt = p.stripe_checkout_session_id || p.stripe_payment_intent_id;
 
             return (
-              <li key={p.id}>
-                <Link
-                  href={`/min-side/saker/${p.case_id}`}
-                  className="flex items-center justify-between rounded-lg border border-border bg-surface p-5 shadow-sm hover:border-border-strong"
-                >
-                  <div>
-                    <p className="text-[14.5px] font-semibold text-ink">{productName}</p>
+              <li key={p.id} className="rounded-lg border border-border bg-surface p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <Link href={`/min-side/saker/${p.case_id}`} className="min-w-0 hover:underline">
+                    <p className="truncate text-[14.5px] font-semibold text-ink">{productName}</p>
                     <p className="mt-1 text-[12.5px] text-ink-faint">
-                      {caseTitle} · {new Date(p.created_at).toLocaleDateString("no-NO")}
+                      {caseTitle} · {new Date(p.created_at).toLocaleDateString("nb-NO")}
                     </p>
-                  </div>
-                  <div className="flex items-center gap-3">
+                  </Link>
+                  <div className="flex shrink-0 items-center gap-3">
                     <span className="text-[14px] font-semibold text-ink">
                       {p.amount_kr.toLocaleString("no-NO")} kr
                     </span>
                     <Badge tone={statusTones[status]}>{statusLabels[status]}</Badge>
                   </div>
-                </Link>
+                </div>
+
+                {status === "completed" && (
+                  <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-border pt-3">
+                    {hasReceipt && (
+                      <a
+                        href={`/api/purchases/${p.id}/receipt`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[13px] font-semibold text-ink-soft hover:text-ink hover:underline"
+                      >
+                        Vis kvittering
+                      </a>
+                    )}
+                    <RefundRequestButton purchaseId={p.id} />
+                  </div>
+                )}
               </li>
             );
           })}
