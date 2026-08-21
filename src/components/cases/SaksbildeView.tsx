@@ -6,9 +6,10 @@ import { DocumentInsightList } from "./DocumentInsightList";
 import { DocumentUploadForm } from "./DocumentUploadForm";
 import { DocumentationGapsList } from "./DocumentationGapsList";
 import { FinancialPotentialCard, type DocumentAmountRow } from "./FinancialPotentialCard";
+import { HashScrollFallback } from "./HashScrollFallback";
 import { NextActionCard } from "./NextActionCard";
 import { ReportHistoryList } from "./ReportHistoryList";
-import { SaksbehandlerCallout } from "./SaksbehandlerCallout";
+import { SaksbehandlerTab } from "./SaksbehandlerTab";
 import { getCaseConflicts } from "@/lib/cases/conflicts";
 import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
 import { statusLabels, statusTones } from "@/lib/cases/labels";
@@ -33,7 +34,9 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
   const [{ data: documents }, claims, { data: gaps }, conflicts, entitlement, { data: reports }] = await Promise.all([
     supabase
       .from("documents")
-      .select("id, original_filename, extraction_status, rejection_reason, ai_extraction, case_analysis, uploaded_at")
+      .select(
+        "id, original_filename, extraction_status, rejection_reason, extracted_text, ai_extraction, case_analysis, uploaded_at"
+      )
       .eq("case_id", caseData.id)
       .order("uploaded_at", { ascending: false }),
     getClaimsWithStatus(supabase, caseData.id),
@@ -85,6 +88,7 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
 
   return (
     <div className="flex flex-col gap-8">
+      <HashScrollFallback />
       <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">
@@ -117,6 +121,10 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
         </div>
       </section>
 
+      <section id="saksbehandler" className="scroll-mt-24">
+        <SaksbehandlerTab caseData={caseData} />
+      </section>
+
       <NextActionCard
         caseId={caseData.id}
         stage={caseData.stage}
@@ -126,7 +134,9 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
         singleOpenGapId={singleOpenGapId}
       />
 
-      <SaksbehandlerCallout caseId={caseData.id} />
+      {/* "Gjeldende regler og rettsgrunnlag" (Fase B) goes here, between
+          Neste anbefalte handling and dokumentasjon/øvrig saksinnhold --
+          not built yet, and deliberately no placeholder section for it. */}
 
       <FinancialPotentialCard userStatedAmountKr={caseData.amount_kr} documentAmounts={documentAmounts} />
 
@@ -136,7 +146,7 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
           <DocumentUploadForm caseId={caseData.id} />
         </div>
         <div className="mt-4">
-          <DocumentInsightList documents={documents ?? []} />
+          <DocumentInsightList documents={documents ?? []} caseId={caseData.id} />
         </div>
       </section>
 

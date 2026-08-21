@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Badge } from "@/components/design-system";
+import { useMemo, useState, useTransition } from "react";
+import { Badge, Button } from "@/components/design-system";
 import type { BadgeTone } from "@/components/design-system";
+import { retryDocumentAnalysis } from "@/lib/documents/retryAnalysis";
 
 export interface DocumentInsightRow {
   id: string;
   original_filename: string;
   extraction_status: "pending" | "extracting" | "done" | "failed";
   rejection_reason: string | null;
+  extracted_text: string | null;
   ai_extraction: { document_type?: string; document_date?: string | null } | null;
   case_analysis: {
     key_points?: string[];
@@ -66,7 +68,55 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" });
 }
 
-export function DocumentInsightList({ documents }: { documents: DocumentInsightRow[] }) {
+const TEXT_UNREADABLE_MESSAGE =
+  "Vi klarte ikke å hente ut nok tekst fra dokumentet til å analysere det. Prøv en annen PDF-versjon eller last opp dokumentet på nytt.";
+const ANALYSIS_FAILED_FALLBACK_MESSAGE = "Vi klarte ikke å analysere dokumentet. Du kan prøve analysen på nytt.";
+
+/**
+ * Which of the two failure modes this is -- and so what heading to show --
+ * is read off extracted_text, not a status column: text extraction never
+ * populates it, while an AI-analysis or claim-persistence failure always
+ * does (analyzeAndPersist.ts sets it before either of those can fail). No
+ * document is ever shown as analysed when it wasn't; a rejection_reason
+ * without an extracted_text always means the text itself couldn't be read.
+ */
+function FailureNotice({ doc, caseId }: { doc: DocumentInsightRow; caseId: string }) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const isTextReadable = Boolean(doc.extracted_text);
+  const heading = isTextReadable ? "Analysen mislyktes" : "Dokumentet kunne ikke leses";
+  const body = isTextReadable
+    ? (doc.rejection_reason ?? ANALYSIS_FAILED_FALLBACK_MESSAGE)
+    : TEXT_UNREADABLE_MESSAGE;
+  const technicalDetail =
+    !isTextReadable && doc.rejection_reason && doc.rejection_reason !== body ? doc.rejection_reason : null;
+
+  function handleRetry() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await retryDocumentAnalysis(caseId, doc.id);
+      } catch {
+        setError("Kunne ikke starte analysen på nytt. Prøv igjen.");
+      }
+    });
+  }
+
+  return (
+    <div className="mt-2.5 rounded-md border border-danger bg-danger-subtle p-3">
+      <p className="text-[13px] font-semibold text-danger-ink">{heading}</p>
+      <p className="mt-1 text-[12.5px] text-danger-ink">{body}</p>
+      {technicalDetail && <p className="mt-1 text-[11.5px] text-ink-faint">{technicalDetail}</p>}
+      <Button type="button" variant="secondary" disabled={isPending} onClick={handleRetry} className="mt-2.5">
+        {isPending ? "Prøver på nytt..." : "Prøv analyse på nytt"}
+      </Button>
+      {error && <p className="mt-1.5 text-[12px] text-danger-ink">{error}</p>}
+    </div>
+  );
+}
+
+export function DocumentInsightList({ documents, caseId }: { documents: DocumentInsightRow[]; caseId: string }) {
   const [sortOrder, setSortOrder] = useState<SortOrder>("date-desc");
 
   const sorted = useMemo(() => {
@@ -137,9 +187,7 @@ export function DocumentInsightList({ documents }: { documents: DocumentInsightR
                 </div>
               </div>
 
-              {doc.rejection_reason && (
-                <p className="mt-1.5 text-[12px] text-ink-faint">{doc.rejection_reason}</p>
-              )}
+              {doc.extraction_status === "failed" && <FailureNotice doc={doc} caseId={caseId} />}
 
               {analysis?.key_points && analysis.key_points.length > 0 && (
                 <ul className="mt-2.5 flex flex-col gap-1">

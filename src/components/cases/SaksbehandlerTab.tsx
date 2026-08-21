@@ -1,5 +1,4 @@
 import type { ResolvedChatReference } from "@/lib/saksbehandler/actions";
-import type { SaksbehandlerNextAction } from "@/lib/saksbehandler/context";
 import type { Case } from "@/lib/cases/types";
 import { createClient } from "@/lib/supabase/server";
 import { SaksbehandlerChat } from "./SaksbehandlerChat";
@@ -39,34 +38,11 @@ export async function SaksbehandlerTab({ caseData }: { caseData: Case }) {
     }));
   }
 
-  // Read straight off the case row -- the same field NextActionCard renders
-  // on Levende saksbilde -- rather than recomputed here, so the two views
-  // can never show a different "neste anbefalte handling" for the same case.
-  const initialNextAction: SaksbehandlerNextAction | null = caseData.next_action
-    ? {
-        action: caseData.next_action,
-        reasoning: caseData.next_action_reasoning ?? "",
-        actionType: caseData.next_action_type ?? "provide_information",
-      }
-    : null;
-
-  // Same "only unambiguous when there's exactly one" rule nextActionCta.ts
-  // documents -- see SaksbildeView.tsx for the full reasoning.
-  const { data: openGaps } = await supabase
-    .from("documentation_gaps")
-    .select("id")
-    .eq("case_id", caseId)
-    .eq("status", "open");
-  const singleOpenGapId = openGaps && openGaps.length === 1 ? openGaps[0].id : undefined;
-
   return (
     <SaksbehandlerChat
       caseId={caseId}
-      caseStage={caseData.stage}
       initialConversationId={conversation?.id ?? null}
       initialMessages={initialMessages}
-      initialNextAction={initialNextAction}
-      singleOpenGapId={singleOpenGapId}
     />
   );
 }

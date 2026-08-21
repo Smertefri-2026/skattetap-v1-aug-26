@@ -13,10 +13,12 @@ export interface RunCaseAnalysisInput {
   documentId: string;
   fileName: string;
   extraction: DocumentExtraction;
-  /** Claim ids created from extraction.possible_facts, same order, null
-   * where that fact's claim insert failed. Lets a contradiction's
-   * own_fact_number resolve to the exact claim it means. */
-  ownClaimIds: (string | null)[];
+  /** Claim ids created from extraction.possible_facts, same order. Lets a
+   * contradiction's own_fact_number resolve to the exact claim it means.
+   * Always fully populated -- analyzeAndPersistDocument only calls this
+   * function once every one of the document's own facts is confirmed
+   * saved as a claim, so there is no missing-id case to handle here. */
+  ownClaimIds: string[];
   userId?: string;
 }
 
@@ -129,7 +131,7 @@ export async function runDocumentCaseAnalysis(
 
     for (const contradiction of output.contradictions) {
       const claim = priorClaims[contradiction.claimIndex - 1];
-      const ownClaimId = input.ownClaimIds[contradiction.ownFactIndex - 1] ?? null;
+      const ownClaimId = input.ownClaimIds[contradiction.ownFactIndex - 1];
       const reasoning = `"${input.fileName}" inneholder opplysninger som motsier dette.`;
 
       await supabase.from("evidence_links").insert({
@@ -144,27 +146,14 @@ export async function runDocumentCaseAnalysis(
         assessed_by: "ai",
       });
 
-      // Only when the counter-claim was actually created can the exact
-      // pair be recorded -- if its own insert failed, the claim-level
-      // conflict above still stands, it just can't be paired precisely.
-      // case_conflicts.claim_b_id is not-null, so this can't be inserted
-      // as a partial row; surfaced instead of silently dropped, since the
-      // structured conflict pairing is genuinely lost here until
-      // claim_b_id can be made nullable (a schema change, not done here).
-      if (ownClaimId) {
-        await supabase.from("case_conflicts").insert({
-          case_id: input.caseId,
-          claim_a_id: claim.id,
-          claim_b_id: ownClaimId,
-          reasoning,
-          clarifying_question: contradiction.clarifyingQuestion,
-          recommended_document: contradiction.recommendedDocument,
-        });
-      } else {
-        console.error(
-          `[runDocumentCaseAnalysis] Dropped case_conflicts row: own claim insert failed for case ${input.caseId}, document ${input.documentId}, own_fact_index ${contradiction.ownFactIndex}. The "conflicting" claim_assessment on claim ${claim.id} was still recorded.`
-        );
-      }
+      await supabase.from("case_conflicts").insert({
+        case_id: input.caseId,
+        claim_a_id: claim.id,
+        claim_b_id: ownClaimId,
+        reasoning,
+        clarifying_question: contradiction.clarifyingQuestion,
+        recommended_document: contradiction.recommendedDocument,
+      });
     }
 
     for (const claimIndex of output.supportsClaimIndices) {

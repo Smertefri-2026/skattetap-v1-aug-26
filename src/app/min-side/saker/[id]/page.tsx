@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CaseContextPanel } from "@/components/cases/CaseContextPanel";
 import { FullCheckWorkbench } from "@/components/cases/FullCheckWorkbench";
 import { KomplettSakWorkbench } from "@/components/cases/KomplettSakWorkbench";
 import { PurchaseGate } from "@/components/cases/PurchaseGate";
-import { SaksbehandlerTab } from "@/components/cases/SaksbehandlerTab";
 import { SaksbildeView } from "@/components/cases/SaksbildeView";
 import { SimpleCheckWorkbench } from "@/components/cases/SimpleCheckWorkbench";
 import { SkatteendringWorkbench } from "@/components/cases/SkatteendringWorkbench";
@@ -28,6 +27,13 @@ export default async function CaseWorkspacePage({
   const { id } = await params;
   const { steg, checkout } = await searchParams;
 
+  // Min saksbehandler is no longer a separate view -- it lives inside
+  // saksbilde now (see SaksbildeView.tsx), so this old URL just becomes an
+  // anchor into that same page instead of a dead/duplicate surface.
+  if (steg === "saksbehandler") {
+    redirect(`/min-side/saker/${id}?steg=saksbilde#saksbehandler`);
+  }
+
   const supabase = await createClient();
   const { data: caseData } = await supabase
     .from("cases")
@@ -38,8 +44,7 @@ export default async function CaseWorkspacePage({
   if (!caseData) notFound();
 
   const activeStage: CaseStage = isStage(steg) ? steg : caseData.stage;
-  const showSaksbehandler = steg === "saksbehandler";
-  const showSaksbilde = !showSaksbehandler && (!steg || steg === "saksbilde");
+  const showSaksbilde = !steg || steg === "saksbilde";
   const documentation = await getDocumentationSummary(supabase, caseData.id);
 
   return (
@@ -56,21 +61,18 @@ export default async function CaseWorkspacePage({
           )}
           <h1 className="text-2xl font-semibold text-ink">{caseData.title}</h1>
         </div>
-        {!showSaksbehandler && (
-          <Link
-            href={`/min-side/saker/${caseData.id}?steg=saksbehandler`}
-            className="self-start rounded-md bg-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-primary-ink sm:shrink-0"
-          >
-            Snakk med Min saksbehandler
-          </Link>
-        )}
+        <Link
+          href={`/min-side/saker/${caseData.id}?steg=saksbilde#saksbehandler`}
+          className="self-start rounded-md bg-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-primary-ink sm:shrink-0"
+        >
+          Snakk med Min saksbehandler
+        </Link>
       </div>
 
       <div className="mt-8 flex flex-col gap-8 lg:flex-row">
         <div className="flex-1">
-          {showSaksbehandler && <SaksbehandlerTab caseData={caseData} />}
           {showSaksbilde && <SaksbildeView caseData={caseData} />}
-          {!showSaksbehandler && !showSaksbilde && (
+          {!showSaksbilde && (
             <>
               {activeStage === "enkel-sjekk" && <SimpleCheckWorkbench caseData={caseData} />}
               {activeStage === "full-sjekk" && (

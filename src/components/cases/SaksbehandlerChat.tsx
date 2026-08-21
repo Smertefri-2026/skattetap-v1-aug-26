@@ -3,10 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/design-system";
-import { nextActionCta } from "@/lib/cases/nextActionCta";
 import { sendMessage, type ResolvedChatReference } from "@/lib/saksbehandler/actions";
-import type { SaksbehandlerNextAction } from "@/lib/saksbehandler/context";
-import type { CaseStage } from "@/lib/cases/types";
 import type { SaksbehandlerMessage } from "./SaksbehandlerTab";
 
 const referenceTypeLabel: Record<ResolvedChatReference["type"], string> = {
@@ -35,63 +32,53 @@ function ReferenceChips({ references }: { references: ResolvedChatReference[] })
   );
 }
 
-function NextActionStrip({
-  caseId,
-  caseStage,
-  nextAction,
-  singleOpenGapId,
-}: {
-  caseId: string;
-  caseStage: CaseStage;
-  nextAction: SaksbehandlerNextAction | null;
-  singleOpenGapId?: string;
-}) {
-  if (!nextAction) return null;
-  const cta = nextActionCta(nextAction.actionType, caseId, caseStage, singleOpenGapId);
-
+function MessageBubble({ message }: { message: SaksbehandlerMessage }) {
   return (
-    <div className="border-b border-border bg-primary-subtle px-5 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-ink">
-        Neste anbefalte handling
-      </p>
-      <p className="mt-1 text-[13px] font-medium text-ink">{nextAction.action}</p>
-      {cta && (
-        <Link href={cta.href} className="mt-1.5 inline-block text-[12.5px] font-medium text-primary-ink hover:underline">
-          {cta.label} →
-        </Link>
-      )}
-    </div>
+    <li className={message.role === "user" ? "flex justify-end" : "flex flex-col items-start"}>
+      <div
+        className={
+          message.role === "user"
+            ? "max-w-[80%] rounded-lg bg-primary px-4 py-2.5 text-[13.5px] text-white"
+            : "max-w-[80%] rounded-lg bg-surface-alt px-4 py-2.5 text-[13.5px] text-ink"
+        }
+      >
+        {message.content}
+      </div>
+      {message.role === "assistant" && <ReferenceChips references={message.references} />}
+    </li>
   );
 }
 
+const COMPACT_VISIBLE_MESSAGES = 2;
+
 export function SaksbehandlerChat({
   caseId,
-  caseStage,
   initialConversationId,
   initialMessages,
-  initialNextAction,
-  singleOpenGapId,
 }: {
   caseId: string;
-  caseStage: CaseStage;
   initialConversationId: string | null;
   initialMessages: SaksbehandlerMessage[];
-  initialNextAction: SaksbehandlerNextAction | null;
-  singleOpenGapId?: string;
 }) {
   const [, setConversationId] = useState(initialConversationId);
   const [messages, setMessages] = useState<SaksbehandlerMessage[]>(initialMessages);
-  const [nextAction, setNextAction] = useState(initialNextAction);
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [escalationReason, setEscalationReason] = useState<string | null>(null);
+  // Compact by design: a long conversation must never take over the rest
+  // of the saksbilde, especially on mobile, so the default view only ever
+  // shows the tail of it -- "Vis hele samtalen" is an explicit opt-in, not
+  // something that creeps open on its own as messages arrive.
+  const [expanded, setExpanded] = useState(false);
 
   const lastAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant");
+  const hasOlderMessages = messages.length > COMPACT_VISIBLE_MESSAGES;
+  const compactMessages = messages.slice(-COMPACT_VISIBLE_MESSAGES);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const hasScrolledOnMount = useRef(false);
+  const hasScrolledOnOpen = useRef(false);
   // Updated from real scroll events, not re-derived from a scrollHeight
   // snapshot taken at some other arbitrary time -- a long reply can still
   // be reflowing right after it's added, which made a one-shot
@@ -100,7 +87,7 @@ export function SaksbehandlerChat({
 
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (!container) return;
+    if (!expanded || !container) return;
     function handleScroll() {
       if (!container) return;
       const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
@@ -108,28 +95,35 @@ export function SaksbehandlerChat({
     }
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [expanded]);
 
-  // Opening the chat lands on the latest message with the input already in
-  // view, not the top -- and a newly-arrived message only pulls the view
-  // down with it if the user was already reading near the bottom. If
-  // they've scrolled up into older history, a forced scroll would yank
-  // them away from what they're reading. scrollIntoView on a trailing
+  // Opening the full conversation lands on the latest message with the
+  // input already in view, not the top. scrollIntoView on a trailing
   // sentinel (rather than manually assigning scrollTop = scrollHeight)
   // scrolls to wherever the content actually ends up after layout, instead
   // of a height read that can be a frame stale.
   useEffect(() => {
-    if (!hasScrolledOnMount.current) {
-      bottomRef.current?.scrollIntoView({ block: "end" });
-      hasScrolledOnMount.current = true;
-      isPinnedToBottom.current = true;
+    if (!expanded) {
+      hasScrolledOnOpen.current = false;
       return;
     }
+    if (!hasScrolledOnOpen.current) {
+      bottomRef.current?.scrollIntoView({ block: "end" });
+      hasScrolledOnOpen.current = true;
+      isPinnedToBottom.current = true;
+    }
+  }, [expanded]);
 
+  // A newly-arrived message only pulls the view down with it if the user
+  // was already reading near the bottom. If they've scrolled up into older
+  // history, a forced scroll would yank them away from what they're
+  // reading.
+  useEffect(() => {
+    if (!expanded || !hasScrolledOnOpen.current) return;
     if (isPinnedToBottom.current) {
       bottomRef.current?.scrollIntoView({ block: "end" });
     }
-  }, [messages.length]);
+  }, [expanded, messages.length]);
 
   async function handleSend(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -153,7 +147,6 @@ export function SaksbehandlerChat({
     try {
       const result = await sendMessage(caseId, userQuestion);
       setConversationId(result.conversationId);
-      setNextAction(result.nextAction);
       setEscalationReason(result.escalationReason);
       setMessages((prev) => [
         ...prev,
@@ -173,46 +166,70 @@ export function SaksbehandlerChat({
   }
 
   return (
-    <div className="flex h-[600px] flex-col rounded-lg border border-border bg-surface shadow-sm">
-      <div className="border-b border-border px-5 py-4">
-        <p className="text-[14px] font-semibold text-ink">Min saksbehandler</p>
-        <p className="mt-0.5 text-[12.5px] text-ink-faint">
-          Kjenner hele saken -- dokumenter, tidslinje, konflikter, dokumentasjonshull og rapporter.
-        </p>
-      </div>
-
-      <NextActionStrip caseId={caseId} caseStage={caseStage} nextAction={nextAction} singleOpenGapId={singleOpenGapId} />
-
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4">
-        {messages.length === 0 ? (
-          <p className="text-[13.5px] text-ink-soft">
-            Spør om hva som helst knyttet til denne saken -- status, hva som mangler, eller hva
-            neste steg bør være.
+    <div className="flex flex-col rounded-lg border border-border bg-surface shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4">
+        <div>
+          <p className="text-[14px] font-semibold text-ink">Min saksbehandler</p>
+          <p className="mt-0.5 text-[12.5px] text-ink-faint">
+            Kjenner hele saken -- dokumenter, tidslinje, konflikter, dokumentasjonshull og rapporter.
           </p>
-        ) : (
-          <ul className="flex flex-col gap-4">
-            {messages.map((m) => (
-              <li
-                key={m.id}
-                className={m.role === "user" ? "flex justify-end" : "flex flex-col items-start"}
-              >
-                <div
-                  className={
-                    m.role === "user"
-                      ? "max-w-[80%] rounded-lg bg-primary px-4 py-2.5 text-[13.5px] text-white"
-                      : "max-w-[80%] rounded-lg bg-surface-alt px-4 py-2.5 text-[13.5px] text-ink"
-                  }
-                >
-                  {m.content}
-                </div>
-                {m.role === "assistant" && <ReferenceChips references={m.references} />}
-              </li>
-            ))}
-          </ul>
+        </div>
+        {expanded && (
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="shrink-0 text-[12.5px] font-medium text-primary-ink hover:underline"
+          >
+            Vis kompakt visning
+          </button>
         )}
-        {sending && <p className="mt-4 text-[12.5px] text-ink-faint">Saksbehandleren svarer...</p>}
-        <div ref={bottomRef} />
       </div>
+
+      {expanded ? (
+        <div ref={scrollContainerRef} className="h-[500px] overflow-y-auto px-5 py-4">
+          {messages.length === 0 ? (
+            <p className="text-[13.5px] text-ink-soft">
+              Spør om hva som helst knyttet til denne saken -- status, hva som mangler, eller hva
+              neste steg bør være.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-4">
+              {messages.map((m) => (
+                <MessageBubble key={m.id} message={m} />
+              ))}
+            </ul>
+          )}
+          {sending && <p className="mt-4 text-[12.5px] text-ink-faint">Saksbehandleren svarer...</p>}
+          <div ref={bottomRef} />
+        </div>
+      ) : (
+        <div className="px-5 py-4">
+          {messages.length === 0 ? (
+            <p className="text-[13.5px] text-ink-soft">
+              Spør om hva som helst knyttet til denne saken -- status, hva som mangler, eller hva
+              neste steg bør være.
+            </p>
+          ) : (
+            <>
+              {hasOlderMessages && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded(true)}
+                  className="mb-3 text-[12.5px] font-medium text-primary-ink hover:underline"
+                >
+                  Vis hele samtalen ({messages.length} meldinger)
+                </button>
+              )}
+              <ul className="flex flex-col gap-4">
+                {compactMessages.map((m) => (
+                  <MessageBubble key={m.id} message={m} />
+                ))}
+              </ul>
+            </>
+          )}
+          {sending && <p className="mt-4 text-[12.5px] text-ink-faint">Saksbehandleren svarer...</p>}
+        </div>
+      )}
 
       {/* Informational only -- SkatteTap has no internal advisors who pick
           up a case from here, so this never offers or implies a human
