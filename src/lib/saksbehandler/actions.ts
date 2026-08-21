@@ -48,7 +48,6 @@ export interface SendMessageResult {
   escalationReason: string | null;
   references: ResolvedChatReference[];
   nextAction: SaksbehandlerNextAction | null;
-  canEscalate: boolean;
 }
 
 export async function sendMessage(caseId: string, question: string): Promise<SendMessageResult> {
@@ -105,6 +104,21 @@ export async function sendMessage(caseId: string, question: string): Promise<Sen
 
   await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
 
+  // Internal-only signal, not a customer promise: Skattetap has no advisor
+  // who picks these up and acts on them today, so nothing here is ever
+  // shown to the customer as "someone will look at this." It's purely a
+  // quality/support-queue record for staff, gated to paid cases the same
+  // way the old customer-facing escalation action used to be.
+  if (result.needsEscalation && context.hasPaidEntitlement) {
+    await supabase.from("support_escalations").insert({
+      case_id: caseId,
+      user_id: user.id,
+      conversation_id: conversationId,
+      message_id: assistantMessage.id,
+      reason: result.escalationReason ?? "Saksbehandleren kunne ikke svare forsvarlig ut fra tilgjengelig informasjon.",
+    });
+  }
+
   return {
     conversationId,
     assistantMessageId: assistantMessage.id,
@@ -113,46 +127,5 @@ export async function sendMessage(caseId: string, question: string): Promise<Sen
     escalationReason: result.escalationReason,
     references,
     nextAction: context.nextAction,
-    canEscalate: context.hasPaidEntitlement,
-  };
-}
-
-export interface RequestEscalationResult {
-  ok: boolean;
-  message: string;
-}
-
-export async function requestEscalation(
-  caseId: string,
-  conversationId: string,
-  messageId: string,
-  reason: string
-): Promise<RequestEscalationResult> {
-  const user = await requireUser();
-  const supabase = await createClient();
-
-  const context = await buildSaksbehandlerContext(supabase, caseId);
-  if (!context.hasPaidEntitlement) {
-    return {
-      ok: false,
-      message: "Å snakke med en rådgiver er tilgjengelig for saker med et kjøpt produkt.",
-    };
-  }
-
-  const { error } = await supabase.from("support_escalations").insert({
-    case_id: caseId,
-    user_id: user.id,
-    conversation_id: conversationId,
-    message_id: messageId,
-    reason,
-  });
-
-  if (error) {
-    return { ok: false, message: "Kunne ikke sende forespørselen. Prøv igjen." };
-  }
-
-  return {
-    ok: true,
-    message: "Dette spørsmålet krever manuell vurdering. En rådgiver har fått beskjed om saken.",
   };
 }

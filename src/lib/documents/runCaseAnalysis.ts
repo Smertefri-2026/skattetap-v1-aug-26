@@ -147,6 +147,10 @@ export async function runDocumentCaseAnalysis(
       // Only when the counter-claim was actually created can the exact
       // pair be recorded -- if its own insert failed, the claim-level
       // conflict above still stands, it just can't be paired precisely.
+      // case_conflicts.claim_b_id is not-null, so this can't be inserted
+      // as a partial row; surfaced instead of silently dropped, since the
+      // structured conflict pairing is genuinely lost here until
+      // claim_b_id can be made nullable (a schema change, not done here).
       if (ownClaimId) {
         await supabase.from("case_conflicts").insert({
           case_id: input.caseId,
@@ -156,6 +160,10 @@ export async function runDocumentCaseAnalysis(
           clarifying_question: contradiction.clarifyingQuestion,
           recommended_document: contradiction.recommendedDocument,
         });
+      } else {
+        console.error(
+          `[runDocumentCaseAnalysis] Dropped case_conflicts row: own claim insert failed for case ${input.caseId}, document ${input.documentId}, own_fact_index ${contradiction.ownFactIndex}. The "conflicting" claim_assessment on claim ${claim.id} was still recorded.`
+        );
       }
     }
 

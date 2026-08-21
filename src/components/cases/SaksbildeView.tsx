@@ -33,13 +33,15 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
   const [{ data: documents }, claims, { data: gaps }, conflicts, entitlement, { data: reports }] = await Promise.all([
     supabase
       .from("documents")
-      .select("id, original_filename, extraction_status, rejection_reason, ai_extraction, case_analysis")
+      .select("id, original_filename, extraction_status, rejection_reason, ai_extraction, case_analysis, uploaded_at")
       .eq("case_id", caseData.id)
       .order("uploaded_at", { ascending: false }),
     getClaimsWithStatus(supabase, caseData.id),
     supabase
       .from("documentation_gaps")
-      .select("id, description, suggested_action, status, importance, recommended_document, claim_id")
+      .select(
+        "id, description, suggested_action, status, importance, recommended_document, claim_id, resolved_at, source_document_id"
+      )
       .eq("case_id", caseData.id)
       .order("created_at", { ascending: false }),
     getCaseConflicts(supabase, caseData.id),
@@ -58,10 +60,19 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
   const undocumented = claims.filter((c) => c.status === "undocumented").length;
 
   const claimStatementById = new Map(claims.map((c) => [c.id, c.statement]));
+  const documentFilenameById = new Map((documents ?? []).map((d) => [d.id, d.original_filename as string]));
   const gapsWithClaimContext = (gaps ?? []).map((g) => ({
     ...g,
     affected_claim_statement: g.claim_id ? (claimStatementById.get(g.claim_id) ?? null) : null,
+    source_document_filename: g.source_document_id ? (documentFilenameById.get(g.source_document_id) ?? null) : null,
   }));
+
+  // See nextActionCta.ts: the recommendation engine never learns a gap's id,
+  // so a deep link to "the" gap it means is only unambiguous when there's
+  // exactly one open one. More than that, and the CTA falls back to the
+  // general documents section rather than guessing.
+  const openGaps = (gaps ?? []).filter((g) => g.status === "open");
+  const singleOpenGapId = openGaps.length === 1 ? openGaps[0].id : undefined;
 
   const documentAmounts: DocumentAmountRow[] = (documents ?? []).flatMap((d) => {
     const extraction = d.ai_extraction as { amounts?: { label: string; amount_kr: number }[] } | null;
@@ -112,13 +123,14 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
         action={caseData.next_action}
         reasoning={caseData.next_action_reasoning}
         actionType={caseData.next_action_type}
+        singleOpenGapId={singleOpenGapId}
       />
 
       <SaksbehandlerCallout caseId={caseData.id} />
 
       <FinancialPotentialCard userStatedAmountKr={caseData.amount_kr} documentAmounts={documentAmounts} />
 
-      <section id="dokumenter">
+      <section id="dokumenter" className="scroll-mt-24">
         <h2 className="text-[16px] font-semibold text-ink">Dokumenter</h2>
         <div className="mt-4">
           <DocumentUploadForm caseId={caseData.id} />
@@ -135,14 +147,14 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
         </div>
       </section>
 
-      <section id="fakta">
+      <section id="fakta" className="scroll-mt-24">
         <h2 className="text-[16px] font-semibold text-ink">Fakta og påstander</h2>
         <div className="mt-4">
           <ClaimsList claims={claims} caseId={caseData.id} />
         </div>
       </section>
 
-      <section id="konflikter">
+      <section id="konflikter" className="scroll-mt-24">
         <h2 className="text-[16px] font-semibold text-ink">Konflikter</h2>
         <p className="mt-1.5 max-w-2xl text-[13px] text-ink-soft">
           Her ligger hver motsigelse Bevismotoren har funnet mellom dokumentene i saken, én og én: hvilken

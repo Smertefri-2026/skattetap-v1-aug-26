@@ -1,15 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/design-system";
 import { nextActionCta } from "@/lib/cases/nextActionCta";
-import { requestEscalation, sendMessage, type ResolvedChatReference } from "@/lib/saksbehandler/actions";
+import { sendMessage, type ResolvedChatReference } from "@/lib/saksbehandler/actions";
 import type { SaksbehandlerNextAction } from "@/lib/saksbehandler/context";
 import type { CaseStage } from "@/lib/cases/types";
 import type { SaksbehandlerMessage } from "./SaksbehandlerTab";
-
-type EscalationState = "idle" | "sending" | "sent" | "denied";
 
 const referenceTypeLabel: Record<ResolvedChatReference["type"], string> = {
   document: "Dokument",
@@ -41,13 +39,15 @@ function NextActionStrip({
   caseId,
   caseStage,
   nextAction,
+  singleOpenGapId,
 }: {
   caseId: string;
   caseStage: CaseStage;
   nextAction: SaksbehandlerNextAction | null;
+  singleOpenGapId?: string;
 }) {
   if (!nextAction) return null;
-  const cta = nextActionCta(nextAction.actionType, caseId, caseStage);
+  const cta = nextActionCta(nextAction.actionType, caseId, caseStage, singleOpenGapId);
 
   return (
     <div className="border-b border-border bg-primary-subtle px-5 py-3">
@@ -70,26 +70,66 @@ export function SaksbehandlerChat({
   initialConversationId,
   initialMessages,
   initialNextAction,
-  canEscalate,
+  singleOpenGapId,
 }: {
   caseId: string;
   caseStage: CaseStage;
   initialConversationId: string | null;
   initialMessages: SaksbehandlerMessage[];
   initialNextAction: SaksbehandlerNextAction | null;
-  canEscalate: boolean;
+  singleOpenGapId?: string;
 }) {
-  const [conversationId, setConversationId] = useState(initialConversationId);
+  const [, setConversationId] = useState(initialConversationId);
   const [messages, setMessages] = useState<SaksbehandlerMessage[]>(initialMessages);
   const [nextAction, setNextAction] = useState(initialNextAction);
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [escalationState, setEscalationState] = useState<EscalationState>("idle");
-  const [escalationNote, setEscalationNote] = useState<string | null>(null);
   const [escalationReason, setEscalationReason] = useState<string | null>(null);
 
   const lastAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant");
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const hasScrolledOnMount = useRef(false);
+  // Updated from real scroll events, not re-derived from a scrollHeight
+  // snapshot taken at some other arbitrary time -- a long reply can still
+  // be reflowing right after it's added, which made a one-shot
+  // scrollHeight/scrollTop calculation land short of the true bottom.
+  const isPinnedToBottom = useRef(true);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    function handleScroll() {
+      if (!container) return;
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      isPinnedToBottom.current = distanceFromBottom < 120;
+    }
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Opening the chat lands on the latest message with the input already in
+  // view, not the top -- and a newly-arrived message only pulls the view
+  // down with it if the user was already reading near the bottom. If
+  // they've scrolled up into older history, a forced scroll would yank
+  // them away from what they're reading. scrollIntoView on a trailing
+  // sentinel (rather than manually assigning scrollTop = scrollHeight)
+  // scrolls to wherever the content actually ends up after layout, instead
+  // of a height read that can be a frame stale.
+  useEffect(() => {
+    if (!hasScrolledOnMount.current) {
+      bottomRef.current?.scrollIntoView({ block: "end" });
+      hasScrolledOnMount.current = true;
+      isPinnedToBottom.current = true;
+      return;
+    }
+
+    if (isPinnedToBottom.current) {
+      bottomRef.current?.scrollIntoView({ block: "end" });
+    }
+  }, [messages.length]);
 
   async function handleSend(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -98,8 +138,6 @@ export function SaksbehandlerChat({
     const userQuestion = question.trim();
     setQuestion("");
     setError(null);
-    setEscalationState("idle");
-    setEscalationNote(null);
     setEscalationReason(null);
 
     const optimisticUserMessage: SaksbehandlerMessage = {
@@ -134,25 +172,6 @@ export function SaksbehandlerChat({
     }
   }
 
-  async function handleEscalate() {
-    if (!conversationId || !lastAssistantMessage) return;
-    setEscalationState("sending");
-
-    try {
-      const result = await requestEscalation(
-        caseId,
-        conversationId,
-        lastAssistantMessage.id,
-        lastAssistantMessage.content
-      );
-      setEscalationNote(result.message);
-      setEscalationState(result.ok ? "sent" : "denied");
-    } catch {
-      setEscalationNote("Kunne ikke sende forespørselen. Prøv igjen.");
-      setEscalationState("denied");
-    }
-  }
-
   return (
     <div className="flex h-[600px] flex-col rounded-lg border border-border bg-surface shadow-sm">
       <div className="border-b border-border px-5 py-4">
@@ -162,9 +181,9 @@ export function SaksbehandlerChat({
         </p>
       </div>
 
-      <NextActionStrip caseId={caseId} caseStage={caseStage} nextAction={nextAction} />
+      <NextActionStrip caseId={caseId} caseStage={caseStage} nextAction={nextAction} singleOpenGapId={singleOpenGapId} />
 
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4">
         {messages.length === 0 ? (
           <p className="text-[13.5px] text-ink-soft">
             Spør om hva som helst knyttet til denne saken -- status, hva som mangler, eller hva
@@ -192,35 +211,18 @@ export function SaksbehandlerChat({
           </ul>
         )}
         {sending && <p className="mt-4 text-[12.5px] text-ink-faint">Saksbehandleren svarer...</p>}
+        <div ref={bottomRef} />
       </div>
 
-      {lastAssistantMessage?.needsEscalation && escalationState !== "sent" && (
+      {/* Informational only -- SkatteTap has no internal advisors who pick
+          up a case from here, so this never offers or implies a human
+          will personally follow up. It just explains, honestly, why the
+          answer above is limited and what would help. */}
+      {lastAssistantMessage?.needsEscalation && (
         <div className="border-t border-border bg-warning-subtle px-5 py-3">
           <p className="text-[13px] text-warning-ink">
-            {escalationReason ?? "Dette spørsmålet krever manuell vurdering."} Ønsker du at en rådgiver skal se på
-            saken?
+            {escalationReason ?? "Dette spørsmålet kan ikke vurderes sikkert ut fra opplysningene vi har nå."}
           </p>
-          {canEscalate ? (
-            <Button
-              type="button"
-              variant="secondary"
-              className="mt-2"
-              onClick={handleEscalate}
-              disabled={escalationState === "sending"}
-            >
-              {escalationState === "sending" ? "Sender..." : "Ja, be om hjelp fra en rådgiver"}
-            </Button>
-          ) : (
-            <p className="mt-2 text-[12.5px] text-ink-faint">
-              Tilgjengelig for saker med et kjøpt produkt.
-            </p>
-          )}
-        </div>
-      )}
-
-      {escalationNote && (
-        <div className="border-t border-border px-5 py-3">
-          <p className="text-[13px] text-ink-soft">{escalationNote}</p>
         </div>
       )}
 

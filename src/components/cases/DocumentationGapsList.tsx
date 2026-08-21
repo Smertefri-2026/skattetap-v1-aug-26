@@ -12,6 +12,12 @@ export interface DocumentationGapRow {
   importance: string | null;
   recommended_document: string | null;
   affected_claim_statement: string | null;
+  resolved_at: string | null;
+  source_document_filename: string | null;
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function DocumentationGapsList({
@@ -35,7 +41,11 @@ export function DocumentationGapsList({
   return (
     <div className="flex flex-col gap-3">
       {open.map((gap) => (
-        <div key={gap.id} id={`hull-${gap.id}`} className="rounded-md border border-border bg-surface p-4">
+        <div
+          key={gap.id}
+          id={`hull-${gap.id}`}
+          className="scroll-mt-24 rounded-md border border-border bg-surface p-4"
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <Badge tone="warning">Åpent</Badge>
@@ -67,31 +77,40 @@ export function DocumentationGapsList({
         </div>
       ))}
 
-      {resolved.length > 0 && (
-        <details className="rounded-md border border-border bg-surface-alt p-4">
-          <summary className="cursor-pointer text-[12.5px] font-semibold text-ink-soft">
-            {resolved.length} løste hull
+      {resolved.map((gap) => (
+        <details
+          key={gap.id}
+          id={`hull-${gap.id}`}
+          className="scroll-mt-24 rounded-md border border-border bg-surface-alt p-4"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2.5">
+              <Badge tone="success">Løst</Badge>
+              <span className="truncate text-[13px] text-ink-soft">{gap.description}</span>
+            </span>
+            <span className="shrink-0 text-ink-faint" aria-hidden="true">
+              ˅
+            </span>
           </summary>
-          <div className="mt-3 flex flex-col gap-2">
-            {resolved.map((gap) => (
-              <div key={gap.id} className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <Badge tone="success">Løst</Badge>
-                  <p className="mt-1.5 text-[13px] text-ink-soft line-through decoration-border-strong">
-                    {gap.description}
-                  </p>
-                </div>
-                <form action={reopenDocumentationGap.bind(null, caseId)}>
-                  <input type="hidden" name="gapId" value={gap.id} />
-                  <Button type="submit" variant="ghost">
-                    Gjenåpne
-                  </Button>
-                </form>
-              </div>
-            ))}
+          <div className="mt-3 flex flex-col gap-1.5 border-t border-border pt-3">
+            {gap.importance && (
+              <p className="text-[12.5px] text-ink-soft">Hvorfor det var viktig: {gap.importance}</p>
+            )}
+            {gap.source_document_filename && (
+              <p className="text-[12.5px] text-ink-soft">Identifisert fra: {gap.source_document_filename}</p>
+            )}
+            {gap.resolved_at && (
+              <p className="text-[12.5px] text-ink-faint">Løst {formatDate(gap.resolved_at)}</p>
+            )}
+            <form action={reopenDocumentationGap.bind(null, caseId)} className="mt-1.5">
+              <input type="hidden" name="gapId" value={gap.id} />
+              <Button type="submit" variant="ghost">
+                Gjenåpne
+              </Button>
+            </form>
           </div>
         </details>
-      )}
+      ))}
     </div>
   );
 }

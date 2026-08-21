@@ -23,7 +23,9 @@ export async function KomplettSakWorkbench({ caseData }: { caseData: Case }) {
       .maybeSingle(),
     supabase
       .from("documentation_gaps")
-      .select("id, description, suggested_action, status, importance, recommended_document, claim_id, source_document_id")
+      .select(
+        "id, description, suggested_action, status, importance, recommended_document, claim_id, source_document_id, resolved_at"
+      )
       .eq("case_id", caseData.id)
       .order("created_at", { ascending: false }),
     getClaimsWithStatus(supabase, caseData.id),
@@ -37,9 +39,11 @@ export async function KomplettSakWorkbench({ caseData }: { caseData: Case }) {
   ]);
 
   const claimStatementById = new Map(claims.map((c) => [c.id, c.statement]));
+  const documentFilenameById = new Map((documents ?? []).map((d) => [d.id, d.original_filename as string]));
   const gapsWithClaimContext = (gaps ?? []).map((g) => ({
     ...g,
     affected_claim_statement: g.claim_id ? (claimStatementById.get(g.claim_id) ?? null) : null,
+    source_document_filename: g.source_document_id ? (documentFilenameById.get(g.source_document_id) ?? null) : null,
   }));
 
   const factCountByDoc = new Map<string, number>();

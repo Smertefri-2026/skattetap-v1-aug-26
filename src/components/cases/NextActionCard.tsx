@@ -9,18 +9,20 @@ export function NextActionCard({
   action,
   reasoning,
   actionType,
+  singleOpenGapId,
 }: {
   caseId: string;
   stage: CaseStage;
   action: string | null;
   reasoning: string | null;
   actionType: NextActionType | null;
+  singleOpenGapId?: string;
 }) {
   if (!action) {
     return null;
   }
 
-  const cta = actionType ? nextActionCta(actionType, caseId, stage) : null;
+  const cta = actionType ? nextActionCta(actionType, caseId, stage, singleOpenGapId) : null;
 
   return (
     <section className="rounded-lg border border-primary bg-primary-subtle p-5">
