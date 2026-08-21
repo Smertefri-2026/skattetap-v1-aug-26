@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/requireUser";
+import { hasExistingRefundRequest, REFUND_REQUEST_MARKER } from "./refundRequests";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -42,12 +43,20 @@ export async function requestRefund(formData: FormData) {
     throw new Error("Fant ikke kjøpet.");
   }
 
+  const admin = createAdminClient();
+  if (await hasExistingRefundRequest(admin, purchase.id)) {
+    // Already requested -- treat as success so the UI just settles into
+    // the same "requested" state instead of surfacing an error for what
+    // isn't really a failure.
+    return;
+  }
+
   const productName = (purchase.products as unknown as { name: string } | null)?.name ?? "Produkt";
   const caseTitle = (purchase.cases as unknown as { title: string } | null)?.title ?? "Sak";
   const kjopsdato = new Date(purchase.created_at).toLocaleDateString("nb-NO");
 
   const lines = [
-    `Refusjonsforespørsel fra Min side.`,
+    REFUND_REQUEST_MARKER,
     `Kjøps-ID: ${purchase.id}`,
     `Produkt: ${productName}`,
     `Sak: ${caseTitle}`,
@@ -58,7 +67,6 @@ export async function requestRefund(formData: FormData) {
     lines.push("", "Melding fra kunde:", parsed.data.note);
   }
 
-  const admin = createAdminClient();
   const { error } = await admin.from("contact_messages").insert({
     name: user.email ?? "Ukjent bruker",
     email: user.email ?? "",

@@ -11,7 +11,7 @@ export default async function AdminOverviewPage() {
     <div className="flex flex-col gap-8">
       <h1 className="text-2xl font-semibold text-ink">Oversikt</h1>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <Card>
           <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">Brukere</p>
           <p className="mt-2 text-[26px] font-semibold text-ink">{overview.userCount}</p>
@@ -28,6 +28,15 @@ export default async function AdminOverviewPage() {
           {overview.openEscalationCount > 0 && (
             <Link href="/admin/support" className="mt-1 inline-block text-[12.5px] text-primary-ink hover:underline">
               Se support →
+            </Link>
+          )}
+        </Card>
+        <Card>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">Refusjoner</p>
+          <p className="mt-2 text-[26px] font-semibold text-ink">{overview.refundRequestCount}</p>
+          {overview.refundRequestCount > 0 && (
+            <Link href="/admin/refusjoner" className="mt-1 inline-block text-[12.5px] text-primary-ink hover:underline">
+              Se refusjoner →
             </Link>
           )}
         </Card>

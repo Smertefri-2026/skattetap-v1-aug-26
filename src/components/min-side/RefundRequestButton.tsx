@@ -3,11 +3,23 @@
 import { useState } from "react";
 import { requestRefund } from "@/lib/purchases/requestRefund";
 
-export function RefundRequestButton({ purchaseId }: { purchaseId: string }) {
-  const [state, setState] = useState<"idle" | "open" | "sending" | "sent" | "error">("idle");
+export function RefundRequestButton({
+  purchaseId,
+  alreadyRequested,
+}: {
+  purchaseId: string;
+  alreadyRequested: boolean;
+}) {
+  const [state, setState] = useState<"idle" | "open" | "sending" | "sent" | "error">(
+    alreadyRequested ? "sent" : "idle"
+  );
 
   if (state === "sent") {
-    return <p className="text-[13px] font-medium text-success-ink">Forespørsel sendt</p>;
+    return (
+      <p className="text-[13px] font-medium text-ink-soft">
+        Refusjon forespurt <span className="text-ink-faint">-- vi tar kontakt på e-post.</span>
+      </p>
+    );
   }
 
   if (state === "idle") {

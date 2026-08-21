@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
 import { getCaseConflicts } from "@/lib/cases/conflicts";
+import { parseRefundRequestMessage, REFUND_REQUEST_MARKER } from "@/lib/purchases/refundRequests";
 
 /**
  * All admin/CRM reads go through the service-role client -- requireAdmin()
@@ -27,20 +28,31 @@ export interface AdminOverview {
   openEscalationCount: number;
   aiCallErrorCount24h: number;
   aiCallCount24h: number;
+  refundRequestCount: number;
 }
 
 export async function getAdminOverview(): Promise<AdminOverview> {
   const supabase = createAdminClient();
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: users }, { data: cases }, { data: purchases }, { count: openEscalations }, { data: aiCalls }] =
-    await Promise.all([
-      supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-      supabase.from("cases").select("stage"),
-      supabase.from("purchases").select("amount_kr").eq("status", "completed"),
-      supabase.from("support_escalations").select("id", { count: "exact", head: true }).eq("status", "open"),
-      supabase.from("ai_call_log").select("status").gte("created_at", since24h),
-    ]);
+  const [
+    { data: users },
+    { data: cases },
+    { data: purchases },
+    { count: openEscalations },
+    { data: aiCalls },
+    { count: refundRequestCount },
+  ] = await Promise.all([
+    supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    supabase.from("cases").select("stage"),
+    supabase.from("purchases").select("amount_kr").eq("status", "completed"),
+    supabase.from("support_escalations").select("id", { count: "exact", head: true }).eq("status", "open"),
+    supabase.from("ai_call_log").select("status").gte("created_at", since24h),
+    supabase
+      .from("contact_messages")
+      .select("id", { count: "exact", head: true })
+      .like("message", `${REFUND_REQUEST_MARKER}%`),
+  ]);
 
   const caseCountByStage: Record<string, number> = {};
   for (const c of cases ?? []) {
@@ -54,6 +66,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     openEscalationCount: openEscalations ?? 0,
     aiCallCount24h: (aiCalls ?? []).length,
     aiCallErrorCount24h: (aiCalls ?? []).filter((c) => c.status === "error").length,
+    refundRequestCount: refundRequestCount ?? 0,
   };
 }
 
@@ -269,4 +282,75 @@ export async function getAdminCaseDetail(caseId: string): Promise<AdminCaseDetai
     })),
     messages,
   };
+}
+
+export interface AdminRefundRequestRow {
+  id: string;
+  purchaseId: string | null;
+  userEmail: string;
+  caseId: string | null;
+  caseTitle: string;
+  productName: string;
+  amountKr: number | null;
+  purchaseStatus: string | null;
+  reason: string | null;
+  requestedAt: string;
+}
+
+/**
+ * Refund requests aren't a table of their own yet -- they're
+ * contact_messages rows written by requestRefund.ts, tagged with
+ * REFUND_REQUEST_MARKER. The purchase/case/product/amount shown here come
+ * from the real purchases row (looked up by the embedded purchase id),
+ * not from re-parsing those fields out of the message text, so this stays
+ * correct even if a product's name changes after the request was made.
+ * There's no persisted status (Åpen/Under behandling/...) because that
+ * needs a schema change that hasn't been approved yet -- see the Min side
+ * follow-up round notes.
+ */
+export async function listRefundRequests(): Promise<AdminRefundRequestRow[]> {
+  const supabase = createAdminClient();
+  const [{ data: contactMessages }, emailByUserId] = await Promise.all([
+    supabase
+      .from("contact_messages")
+      .select("id, email, message, created_at")
+      .like("message", `${REFUND_REQUEST_MARKER}%`)
+      .order("created_at", { ascending: false }),
+    getUserEmailMap(),
+  ]);
+
+  const rows = contactMessages ?? [];
+  if (rows.length === 0) return [];
+
+  const parsed = rows.map((row) => ({ row, ...parseRefundRequestMessage(row.message as string) }));
+  const purchaseIds = [...new Set(parsed.map((p) => p.purchaseId).filter((id): id is string => id != null))];
+
+  const { data: purchases } =
+    purchaseIds.length > 0
+      ? await supabase
+          .from("purchases")
+          .select("id, user_id, case_id, amount_kr, status, product_code, products(name), cases(title)")
+          .in("id", purchaseIds)
+      : { data: [] };
+  const purchaseById = new Map((purchases ?? []).map((p) => [p.id as string, p]));
+
+  return parsed.map(({ row, purchaseId, note }) => {
+    const purchase = purchaseId ? purchaseById.get(purchaseId) : undefined;
+    return {
+      id: row.id as string,
+      purchaseId: purchaseId,
+      userEmail: purchase
+        ? (emailByUserId.get(purchase.user_id as string) ?? "(ukjent bruker)")
+        : (row.email as string),
+      caseId: purchase ? (purchase.case_id as string) : null,
+      caseTitle: purchase ? ((purchase.cases as unknown as { title: string } | null)?.title ?? "(slettet sak)") : "-",
+      productName: purchase
+        ? ((purchase.products as unknown as { name: string } | null)?.name ?? (purchase.product_code as string))
+        : "(kjøp ikke funnet)",
+      amountKr: purchase ? (purchase.amount_kr as number) : null,
+      purchaseStatus: purchase ? (purchase.status as string) : null,
+      reason: note,
+      requestedAt: row.created_at as string,
+    };
+  });
 }

@@ -46,7 +46,7 @@ export function MinSideHeader({ isAdmin }: { isAdmin: boolean }) {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-ink">
       <div className="relative mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/min-side" onClick={() => setOpen(false)}>
+        <Link href="/" onClick={() => setOpen(false)}>
           <Wordmark tone="on-dark" className="text-[15px]" />
         </Link>
 

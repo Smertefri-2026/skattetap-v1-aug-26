@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Badge } from "@/components/design-system";
 import type { BadgeTone } from "@/components/design-system";
 import { RefundRequestButton } from "./RefundRequestButton";
+import { getRequestedPurchaseIds } from "@/lib/purchases/refundRequests";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 type PurchaseStatus = "pending" | "completed" | "failed" | "canceled" | "refunded";
@@ -30,6 +32,9 @@ export async function KjopTab() {
       "id, amount_kr, status, created_at, case_id, stripe_checkout_session_id, stripe_payment_intent_id, products(name), cases(title)"
     )
     .order("created_at", { ascending: false });
+
+  const completedIds = (purchases ?? []).filter((p) => p.status === "completed").map((p) => p.id);
+  const requestedIds = await getRequestedPurchaseIds(createAdminClient(), completedIds);
 
   return (
     <div className="flex flex-col gap-6">
@@ -85,7 +90,7 @@ export async function KjopTab() {
                         Vis kvittering
                       </a>
                     )}
-                    <RefundRequestButton purchaseId={p.id} />
+                    <RefundRequestButton purchaseId={p.id} alreadyRequested={requestedIds.has(p.id)} />
                   </div>
                 )}
               </li>
