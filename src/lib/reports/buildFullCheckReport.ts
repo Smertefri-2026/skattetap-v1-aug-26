@@ -17,11 +17,16 @@ export async function buildFullCheckReport(
     .single();
   if (caseError || !caseRow) throw new Error("Fant ikke saken.");
 
-  const [claims, facts, { data: documents }, { data: taxRules }] = await Promise.all([
+  const [claims, facts, { data: documents }, { data: legalSources }] = await Promise.all([
     getClaimsWithStatus(supabase, caseId),
     getCaseFacts(supabase, caseId),
     supabase.from("documents").select("original_filename").eq("case_id", caseId),
-    supabase.from("tax_rules").select("rule_code, law_reference, provision, topic, short_explanation"),
+    supabase
+      .from("legal_sources")
+      .select("source_code, law_reference, provision, topic, short_explanation")
+      .eq("source_type", "lov_forskrift")
+      .eq("active", true)
+      .eq("verification_status", "verified"),
   ]);
 
   const ai = await analyzeFullCheck({
@@ -32,16 +37,24 @@ export async function buildFullCheckReport(
     description: caseRow.description,
     claims: claims.map((c) => ({ statement: c.statement, status: c.status })),
     documentFilenames: (documents ?? []).map((d) => d.original_filename),
-    availableRules: (taxRules ?? []).map((r) => ({
-      rule_code: r.rule_code,
+    availableRules: (legalSources ?? []).map((r) => ({
+      source_code: r.source_code,
       topic: r.topic,
       short_explanation: r.short_explanation,
     })),
   });
 
-  const applicableRules = (taxRules ?? []).filter((r) =>
-    ai.relevant_rule_codes.includes(r.rule_code)
-  );
+  // RuleReference (reports.content's frozen shape) keeps the rule_code key
+  // regardless of the live column's name, so old and new reports stay
+  // identically shaped -- see reports/types.ts.
+  const applicableRules = (legalSources ?? [])
+    .filter((r) => ai.relevant_source_codes.includes(r.source_code))
+    .map((r) => ({
+      rule_code: r.source_code,
+      law_reference: r.law_reference ?? "",
+      provision: r.provision ?? "",
+      short_explanation: r.short_explanation,
+    }));
 
   const content: FullCheckReportContent = {
     summary: ai.summary,

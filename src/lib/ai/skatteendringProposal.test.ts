@@ -16,7 +16,7 @@ const baseInput = {
   description: "Jeg pendlet og glemte fradraget.",
   documentedClaims: ["Ansatt fra 14.08.2023"],
   documentFilenames: ["lonnsslipp.pdf"],
-  availableRules: [{ rule_code: "reisefradrag-arbeid", topic: "Reisefradrag", short_explanation: "..." }],
+  availableRules: [{ source_code: "reisefradrag-arbeid", topic: "Reisefradrag", short_explanation: "..." }],
 };
 
 describe("analyzeSkatteendringProposal", () => {
@@ -28,13 +28,13 @@ describe("analyzeSkatteendringProposal", () => {
         referenced_document_filenames: ["lonnsslipp.pdf", "oppdiktet-dokument.pdf"],
         attachments: ["lonnsslipp.pdf"],
         missing_information: [],
-        relevant_rule_codes: ["reisefradrag-arbeid", "oppdiktet-kode"],
+        relevant_source_codes: ["reisefradrag-arbeid", "oppdiktet-kode"],
       })
     );
 
     const result = await analyzeSkatteendringProposal(baseInput);
     expect(result.referenced_document_filenames).toEqual(["lonnsslipp.pdf"]);
-    expect(result.relevant_rule_codes).toEqual(["reisefradrag-arbeid"]);
+    expect(result.relevant_source_codes).toEqual(["reisefradrag-arbeid"]);
   });
 
   it("kaster hvis KI-svaret ikke følger skjemaet", async () => {

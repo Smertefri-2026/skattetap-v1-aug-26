@@ -6,7 +6,7 @@ export const SKATTEENDRING_PROPOSAL_INSTRUCTIONS = [
   "proposal_text skal være selve henvendelsesteksten -- saklig, presis og klar til gjennomsyn, IKKE en juridisk konklusjon. Bruk formuleringer som 'det bes om at følgende vurderes' fremfor påstander om at brukeren har rett.",
   "reasoning skal bygge UTELUKKENDE på fakta merket som dokumentert i grunnlaget du får -- ikke på brukerens udokumenterte påstander.",
   "referenced_document_filenames skal kun inneholde filnavn som faktisk finnes i dokumentlisten du får oppgitt. Du dikter aldri opp et filnavn.",
-  "relevant_rule_codes skal kun inneholde koder fra regelverkslisten du får oppgitt.",
+  "relevant_source_codes skal kun inneholde koder fra regelverkslisten du får oppgitt.",
   "missing_information skal være konkret og knyttet til DENNE saken -- ikke en generisk sjekkliste.",
   "Du svarer utelukkende med det etterspurte JSON-objektet, uten tekst utenfor det.",
 ].join(" ");
@@ -17,7 +17,7 @@ const skatteendringProposalSchema = z.object({
   referenced_document_filenames: z.array(z.string()).max(10).catch([]),
   attachments: z.array(z.string().max(200)).max(10).catch([]),
   missing_information: z.array(z.string().max(200)).max(8).catch([]),
-  relevant_rule_codes: z.array(z.string()).max(6).catch([]),
+  relevant_source_codes: z.array(z.string()).max(6).catch([]),
 });
 
 export type SkatteendringProposal = z.infer<typeof skatteendringProposalSchema>;
@@ -30,7 +30,7 @@ export interface SkatteendringProposalInput {
   description: string | null;
   documentedClaims: string[];
   documentFilenames: string[];
-  availableRules: { rule_code: string; topic: string; short_explanation: string }[];
+  availableRules: { source_code: string; topic: string; short_explanation: string }[];
   /** Case summary + strongest points from an existing Komplett sak analysis,
    * if the case has one -- lets Skatteendring build on that deeper analysis
    * instead of starting from claims alone. */
@@ -54,8 +54,8 @@ function buildPrompt(input: SkatteendringProposalInput): string {
     ...(input.komplettSakContext
       ? [`Grunnlag fra tidligere Komplett sak-analyse: ${input.komplettSakContext}`, ""]
       : []),
-    "Tilgjengelig regelverk (bruk KUN disse rule_code-verdiene hvis relevant):",
-    ...input.availableRules.map((r) => `- ${r.rule_code}: ${r.topic} -- ${r.short_explanation}`),
+    "Tilgjengelig regelverk (bruk KUN disse source_code-verdiene hvis relevant):",
+    ...input.availableRules.map((r) => `- ${r.source_code}: ${r.topic} -- ${r.short_explanation}`),
     "",
     `Svar med et JSON-objekt på nøyaktig denne formen:
 {
@@ -64,7 +64,7 @@ function buildPrompt(input: SkatteendringProposalInput): string {
   "referenced_document_filenames": ["kun filnavn fra listen over"],
   "attachments": ["hvilke av dokumentene som bør legges ved, og eventuelt hva mer"],
   "missing_information": ["konkrete, saksspesifikke mangler"],
-  "relevant_rule_codes": ["kun koder fra listen over"]
+  "relevant_source_codes": ["kun koder fra listen over"]
 }`,
   ].join("\n");
 }
@@ -79,13 +79,13 @@ export async function analyzeSkatteendringProposal(
   });
 
   const validFilenames = new Set(input.documentFilenames);
-  const validCodes = new Set(input.availableRules.map((r) => r.rule_code));
+  const validCodes = new Set(input.availableRules.map((r) => r.source_code));
 
   return {
     ...result,
     referenced_document_filenames: result.referenced_document_filenames.filter((f) =>
       validFilenames.has(f)
     ),
-    relevant_rule_codes: result.relevant_rule_codes.filter((code) => validCodes.has(code)),
+    relevant_source_codes: result.relevant_source_codes.filter((code) => validCodes.has(code)),
   };
 }

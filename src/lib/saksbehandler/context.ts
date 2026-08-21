@@ -48,6 +48,22 @@ export interface SaksbehandlerNextAction {
   actionType: NextActionType;
 }
 
+export interface SaksbehandlerContextLegalSource {
+  citation: string;
+  sourceType: string;
+  locator: string | null;
+  bmSummary: string;
+  relevanceReasoning: string;
+  supports: "kunden" | "skatteetaten" | "noytral" | "uklar";
+}
+
+export interface SaksbehandlerContextLegalQuestion {
+  question: string;
+  hasCompletedAnalysis: boolean;
+  ourAssessment: string | null;
+  sources: SaksbehandlerContextLegalSource[];
+}
+
 /**
  * Everything Min saksbehandler is allowed to know about a case, in one
  * place. Deliberately built on `summarizeCase` (the same case-summarizing
@@ -73,6 +89,7 @@ export interface SaksbehandlerContext {
   reports: SaksbehandlerContextReport[];
   nextAction: SaksbehandlerNextAction | null;
   applicableRules: { rule_code: string; law_reference: string; provision: string; short_explanation: string }[];
+  legalQuestions: SaksbehandlerContextLegalQuestion[];
   documentCount: number;
   documentsBeingProcessed: number;
   documentsFailed: number;
@@ -125,6 +142,8 @@ export async function buildSaksbehandlerContext(
     credibility: (d.case_analysis as { credibility?: "high" | "medium" | "low" } | null)?.credibility ?? null,
   }));
 
+  const legalQuestions = await buildLegalQuestionsContext(supabase, caseId);
+
   return {
     caseTitle: caseRow.title,
     stage: caseRow.stage,
@@ -163,9 +182,99 @@ export async function buildSaksbehandlerContext(
         }
       : null,
     applicableRules: summary.applicable_rules,
+    legalQuestions,
     documentCount: documentation.documentCount,
     documentsBeingProcessed: documentation.extractingCount,
     documentsFailed: documentation.failedCount,
     hasPaidEntitlement: entitlement !== null,
   };
+}
+
+/**
+ * Legal questions, each with the latest COMPLETED analysis run's sources
+ * and synthesis -- never a running/failed run, which must never look like
+ * a settled legal assessment. Separate queries joined in code (matching
+ * getCaseConflicts's own pattern), not embedded PostgREST relations.
+ */
+async function buildLegalQuestionsContext(
+  supabase: SupabaseClient,
+  caseId: string
+): Promise<SaksbehandlerContextLegalQuestion[]> {
+  const { data: questions } = await supabase
+    .from("legal_questions")
+    .select("id, question")
+    .eq("case_id", caseId);
+  if (!questions || questions.length === 0) return [];
+
+  const questionIds = questions.map((q) => q.id as string);
+  const { data: completedRuns } = await supabase
+    .from("legal_analysis_runs")
+    .select("id, legal_question_id, created_at")
+    .in("legal_question_id", questionIds)
+    .eq("status", "completed")
+    .order("created_at", { ascending: false });
+
+  const latestRunByQuestion = new Map<string, string>();
+  for (const run of completedRuns ?? []) {
+    const questionId = run.legal_question_id as string;
+    if (!latestRunByQuestion.has(questionId)) {
+      latestRunByQuestion.set(questionId, run.id as string);
+    }
+  }
+
+  const runIds = [...latestRunByQuestion.values()];
+  if (runIds.length === 0) {
+    return questions.map((q) => ({
+      question: q.question as string,
+      hasCompletedAnalysis: false,
+      ourAssessment: null,
+      sources: [],
+    }));
+  }
+
+  const [assessmentsResult, sourceLinksResult] = await Promise.all([
+    supabase.from("legal_question_assessments").select("legal_analysis_run_id, our_assessment").in("legal_analysis_run_id", runIds),
+    supabase
+      .from("legal_question_sources")
+      .select("legal_analysis_run_id, legal_source_id, locator_type, locator_value, bm_summary, relevance_reasoning, supports")
+      .in("legal_analysis_run_id", runIds),
+  ]);
+
+  const assessmentByRun = new Map(
+    (assessmentsResult.data ?? []).map((a) => [a.legal_analysis_run_id as string, a.our_assessment as string])
+  );
+
+  const sourceLinks = sourceLinksResult.data ?? [];
+  const sourceIds = [...new Set(sourceLinks.map((s) => s.legal_source_id as string))];
+  const { data: sourceRows } =
+    sourceIds.length > 0
+      ? await supabase.from("legal_sources").select("id, source_code, citation, source_type").in("id", sourceIds)
+      : { data: [] };
+  const sourceById = new Map((sourceRows ?? []).map((s) => [s.id as string, s]));
+
+  const sourcesByRun = new Map<string, SaksbehandlerContextLegalSource[]>();
+  for (const link of sourceLinks) {
+    const runId = link.legal_analysis_run_id as string;
+    const source = sourceById.get(link.legal_source_id as string);
+    const list = sourcesByRun.get(runId) ?? [];
+    list.push({
+      citation: (source?.citation as string | null) ?? (source?.source_code as string | undefined) ?? "ukjent kilde",
+      sourceType: (source?.source_type as string) ?? "annet",
+      locator: link.locator_value as string | null,
+      bmSummary: link.bm_summary as string,
+      relevanceReasoning: link.relevance_reasoning as string,
+      supports: link.supports as SaksbehandlerContextLegalSource["supports"],
+    });
+    sourcesByRun.set(runId, list);
+  }
+
+  return questions.map((q) => {
+    const runId = latestRunByQuestion.get(q.id as string);
+    return {
+      question: q.question as string,
+      hasCompletedAnalysis: !!runId,
+      ourAssessment: runId ? (assessmentByRun.get(runId) ?? null) : null,
+      sources: runId ? (sourcesByRun.get(runId) ?? []) : [],
+    };
+  });
 }

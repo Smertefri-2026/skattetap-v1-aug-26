@@ -15,9 +15,9 @@ describe("analyzeLegalLinking", () => {
   it("filtrerer bort oppdiktede regel-koder og ugyldige claim-indekser", async () => {
     callAiChatJson.mockImplementation(({ validate }) =>
       validate({
-        claim_rule_links: [
-          { claim_index: 1, rule_codes: ["ekte-kode", "oppdiktet-kode"] },
-          { claim_index: 42, rule_codes: ["ekte-kode"] },
+        claim_source_links: [
+          { claim_index: 1, source_codes: ["ekte-kode", "oppdiktet-kode"] },
+          { claim_index: 42, source_codes: ["ekte-kode"] },
         ],
         legal_assessment: "Vurdering",
       })
@@ -26,10 +26,10 @@ describe("analyzeLegalLinking", () => {
     const result = await analyzeLegalLinking({
       caseTitle: "Test",
       claims,
-      availableRules: [{ rule_code: "ekte-kode", topic: "Tema", short_explanation: "..." }],
+      availableRules: [{ source_code: "ekte-kode", topic: "Tema", short_explanation: "..." }],
     });
 
-    expect(result.claim_rule_links).toHaveLength(1);
-    expect(result.claim_rule_links[0].rule_codes).toEqual(["ekte-kode"]);
+    expect(result.claim_source_links).toHaveLength(1);
+    expect(result.claim_source_links[0].source_codes).toEqual(["ekte-kode"]);
   });
 });

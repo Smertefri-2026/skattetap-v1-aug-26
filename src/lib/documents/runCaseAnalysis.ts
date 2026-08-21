@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DocumentExtraction } from "@/lib/ai/documentExtraction";
 import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
 import { refreshNextAction } from "@/lib/cases/refreshNextAction";
+import { runLegalAnalysis } from "@/lib/legal/runLegalAnalysis";
 import {
   documentCaseAnalysisEngine,
   sanitizeAnalysisIndices,
@@ -166,6 +167,12 @@ export async function runDocumentCaseAnalysis(
     }
 
     await refreshNextAction(supabase, input.caseId, input.userId);
+
+    // Best-effort, same as this whole function -- runLegalAnalysis never
+    // throws itself, but the extra safety net costs nothing and keeps
+    // this function's own success path unconditionally protected even if
+    // that ever changes.
+    await runLegalAnalysis(supabase, input.caseId, input.userId).catch(() => {});
 
     return output;
   } catch {

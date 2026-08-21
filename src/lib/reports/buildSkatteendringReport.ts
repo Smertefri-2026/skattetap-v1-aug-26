@@ -16,10 +16,15 @@ export async function buildSkatteendringReport(
     .single();
   if (caseError || !caseRow) throw new Error("Fant ikke saken.");
 
-  const [claims, { data: documents }, { data: taxRules }, { data: komplettSak }] = await Promise.all([
+  const [claims, { data: documents }, { data: legalSources }, { data: komplettSak }] = await Promise.all([
     getClaimsWithStatus(supabase, caseId),
     supabase.from("documents").select("id, original_filename").eq("case_id", caseId),
-    supabase.from("tax_rules").select("rule_code, law_reference, provision, topic, short_explanation"),
+    supabase
+      .from("legal_sources")
+      .select("source_code, law_reference, provision, topic, short_explanation")
+      .eq("source_type", "lov_forskrift")
+      .eq("active", true)
+      .eq("verification_status", "verified"),
     supabase
       .from("reports")
       .select("content")
@@ -50,8 +55,8 @@ export async function buildSkatteendringReport(
     description: caseRow.description,
     documentedClaims,
     documentFilenames,
-    availableRules: (taxRules ?? []).map((r) => ({
-      rule_code: r.rule_code,
+    availableRules: (legalSources ?? []).map((r) => ({
+      source_code: r.source_code,
       topic: r.topic,
       short_explanation: r.short_explanation,
     })),
@@ -59,9 +64,16 @@ export async function buildSkatteendringReport(
   });
 
   const filenameToId = new Map((documents ?? []).map((d) => [d.original_filename, d.id]));
-  const applicableRules = (taxRules ?? []).filter((r) =>
-    ai.relevant_rule_codes.includes(r.rule_code)
-  );
+  // RuleReference (reports.content's frozen shape) keeps the rule_code key
+  // regardless of the live column's name -- see reports/types.ts.
+  const applicableRules = (legalSources ?? [])
+    .filter((r) => ai.relevant_source_codes.includes(r.source_code))
+    .map((r) => ({
+      rule_code: r.source_code,
+      law_reference: r.law_reference ?? "",
+      provision: r.provision ?? "",
+      short_explanation: r.short_explanation,
+    }));
 
   const content: SkatteendringReportContent = {
     proposal_text: ai.proposal_text,

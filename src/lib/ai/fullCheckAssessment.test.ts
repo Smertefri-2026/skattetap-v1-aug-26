@@ -17,18 +17,18 @@ const baseInput = {
   claims: [{ statement: "Pendlet 6 mil hver vei", status: "documented" }],
   documentFilenames: ["lonnsslipp.pdf"],
   availableRules: [
-    { rule_code: "reisefradrag-arbeid", topic: "Reisefradrag", short_explanation: "..." },
+    { source_code: "reisefradrag-arbeid", topic: "Reisefradrag", short_explanation: "..." },
   ],
 };
 
 describe("analyzeFullCheck", () => {
-  it("filtrerer bort rule_code-verdier KI-en dikter opp som ikke finnes i regelverkslisten", async () => {
+  it("filtrerer bort source_code-verdier KI-en dikter opp som ikke finnes i regelverkslisten", async () => {
     callAiChatJson.mockImplementation(({ validate }) =>
       validate({
         summary: "Sammendrag",
         background: "Bakgrunn",
         assessment: "Vurdering",
-        relevant_rule_codes: ["reisefradrag-arbeid", "en-oppdiktet-kode"],
+        relevant_source_codes: ["reisefradrag-arbeid", "en-oppdiktet-kode"],
         conflicting_notes: [],
         documentation_gaps: [],
         recommended_next_steps: [],
@@ -36,7 +36,7 @@ describe("analyzeFullCheck", () => {
     );
 
     const result = await analyzeFullCheck(baseInput);
-    expect(result.relevant_rule_codes).toEqual(["reisefradrag-arbeid"]);
+    expect(result.relevant_source_codes).toEqual(["reisefradrag-arbeid"]);
   });
 
   it("kaster hvis KI-svaret ikke følger skjemaet", async () => {

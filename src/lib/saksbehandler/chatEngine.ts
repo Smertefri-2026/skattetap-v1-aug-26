@@ -118,6 +118,24 @@ function formatReports(reports: SaksbehandlerContext["reports"]): string {
     .join("\n");
 }
 
+function formatLegalQuestions(questions: SaksbehandlerContext["legalQuestions"]): string {
+  if (questions.length === 0) return "(ingen rettsspørsmål identifisert av Bevismotoren ennå)";
+  return questions
+    .map((q, i) => {
+      const header = `${i + 1}. ${q.question}`;
+      if (!q.hasCompletedAnalysis) {
+        return `${header}\n   Rettskildeanalyse ikke gjennomført ennå -- dette er Bevismotorens egen jobb, ikke noe som mangler i kundens dokumenter.`;
+      }
+      const sourceLines = q.sources.length
+        ? q.sources
+            .map((s) => `   - [${s.supports}] ${s.citation}${s.locator ? ` ${s.locator}` : ""}: ${s.bmSummary}`)
+            .join("\n")
+        : "   (ingen verifiserte rettskilder funnet relevante for dette spørsmålet ennå)";
+      return `${header}\n${sourceLines}\n   Bevismotorens vurdering: ${q.ourAssessment}`;
+    })
+    .join("\n");
+}
+
 function formatNextAction(nextAction: SaksbehandlerContext["nextAction"]): string {
   if (!nextAction) return "(ikke beregnet ennå)";
   return `${nextAction.action} -- ${nextAction.reasoning}`;
@@ -154,10 +172,13 @@ function formatContext(context: SaksbehandlerContext): string {
     "Genererte rapporter (nummerert):",
     formatReports(context.reports),
     "",
-    "Relevant regelverk:",
+    "Rettsspørsmål identifisert av Bevismotoren, med rettskildeanalyse der den er gjennomført (nummerert):",
+    formatLegalQuestions(context.legalQuestions),
+    "",
+    "Regelverk fra tidligere Komplett sak-rapport, hvis noen:",
     ...(context.applicableRules.length > 0
       ? context.applicableRules.map((r) => `- ${r.rule_code} (${r.law_reference}): ${r.short_explanation}`)
-      : ["(ingen identifisert ennå)"]),
+      : ["(ingen komplett sak-rapport generert ennå)"]),
   ];
 
   return lines.join("\n");
@@ -172,6 +193,7 @@ Du skal:
 - Hvis saken har en åpen konflikt som er relevant for spørsmålet: forklar HVORFOR den er en konflikt (de to motstridende opplysningene) og hva som konkret avklarer den, i stedet for å late som fakta er sikkert.
 - Sakens egen beregnede "neste anbefalte handling" over er autoritativ og vises allerede til brukeren et annet sted i grensesnittet -- ikke finn opp en konkurrerende anbefaling. Forklar heller HVORFOR den handlingen er riktig akkurat nå, hvis spørsmålet gjelder det.
 - ALDRI gjette eller finne opp fakta, beløp eller regelverk som ikke står i konteksten.
+- Dokumentene gir fakta og bevis. Rettskildene gir regelverket. Det er Bevismotorens egen jobb å koble dem -- ALDRI kundens. Manglende juridisk argumentasjon eller regelverksvurdering i kundens egne dokumenter er IKKE et dokumentasjonshull, og du skal ALDRI anbefale kunden å "skaffe en juridisk vurdering", "skaffe dokumentasjon som henviser til lovverket" eller lignende bare fordi et rettsspørsmål under viser "rettskildeanalyse ikke gjennomført ennå". Forklar i så fall ærlig at Bevismotoren ikke har fullført den analysen ennå -- det skjer automatisk, ikke noe brukeren selv må fremskaffe.
 
 Hvis spørsmålet krever informasjon du ikke har, krever juridisk skjønn utover det som er dokumentert, eller du av andre grunner ikke kan svare forsvarlig: sett needs_escalation til true. Ikke gjett i stedet -- forklar heller ærlig i "answer" at spørsmålet ikke kan vurderes sikkert ut fra opplysningene du har nå. Fyll escalation_reason med konkret hva som mangler for å kunne svare: hvilke opplysninger som mangler, hvilke rettskilder som eventuelt må undersøkes nærmere, og hva brukeren selv kan gjøre videre. Skattetap har ingen interne rådgivere som overtar saker fra deg -- aldri antyd at noen internt vil se på saken eller ta kontakt. Kun når spørsmålet faktisk er av en type som bør vurderes av advokat eller annen kvalifisert skatterådgiver (aldri som fast frase, kun når det genuint stemmer): si det rett ut, som en anbefaling om å søke ekstern hjelp -- ikke et internt tilbud fra Skattetap.
 

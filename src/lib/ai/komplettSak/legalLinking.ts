@@ -4,7 +4,7 @@ import { formatIndexedClaims, isValidClaimIndex, type IndexedClaim } from "./sha
 
 export const LEGAL_LINKING_INSTRUCTIONS = [
   "Du er den skatterettslige vurderingsmotoren i Skattetap. Du kobler hvert relevante faktum til regelverket som kan gjelde for det, og skriver en samlet skatterettslig vurdering.",
-  "Du bruker UTELUKKENDE rule_code-verdier fra regelverkslisten du får oppgitt -- du dikter aldri opp en kode eller et lovsitat.",
+  "Du bruker UTELUKKENDE source_code-verdier fra regelverkslisten du får oppgitt -- du dikter aldri opp en kode eller et lovsitat.",
   "legal_assessment er en SKATTERETTSLIG vurdering, atskilt fra generell KI-synes-vurdering -- den skal utelukkende resonnere ut fra det oppgitte regelverket og de oppgitte fakta, aldri fra antakelser om hva som er 'rimelig' eller 'sannsynlig utfall'.",
   "Du konkluderer aldri med at brukeren har eller ikke har krav på noe -- du beskriver kun hvorfor et regelverkspunkt kan være relevant for et gitt faktum.",
   "Du referer alltid til fakta ved deres [nummer] fra listen du får oppgitt.",
@@ -12,11 +12,11 @@ export const LEGAL_LINKING_INSTRUCTIONS = [
 ].join(" ");
 
 const legalLinkingSchema = z.object({
-  claim_rule_links: z
+  claim_source_links: z
     .array(
       z.object({
         claim_index: z.number().int(),
-        rule_codes: z.array(z.string()).max(4).catch([]),
+        source_codes: z.array(z.string()).max(4).catch([]),
       })
     )
     .max(20)
@@ -29,7 +29,7 @@ export type LegalLinkingResult = z.infer<typeof legalLinkingSchema>;
 export interface LegalLinkingInput {
   caseTitle: string;
   claims: IndexedClaim[];
-  availableRules: { rule_code: string; topic: string; short_explanation: string }[];
+  availableRules: { source_code: string; topic: string; short_explanation: string }[];
 }
 
 function buildPrompt(input: LegalLinkingInput): string {
@@ -39,12 +39,12 @@ function buildPrompt(input: LegalLinkingInput): string {
     "Fakta/påstander i saken:",
     formatIndexedClaims(input.claims),
     "",
-    "Tilgjengelig regelverk (bruk KUN disse rule_code-verdiene):",
-    ...input.availableRules.map((r) => `- ${r.rule_code}: ${r.topic} -- ${r.short_explanation}`),
+    "Tilgjengelig regelverk (bruk KUN disse source_code-verdiene):",
+    ...input.availableRules.map((r) => `- ${r.source_code}: ${r.topic} -- ${r.short_explanation}`),
     "",
     `Svar med et JSON-objekt på nøyaktig denne formen:
 {
-  "claim_rule_links": [{ "claim_index": 1, "rule_codes": ["kun koder fra listen over"] }],
+  "claim_source_links": [{ "claim_index": 1, "source_codes": ["kun koder fra listen over"] }],
   "legal_assessment": "samlet skatterettslig vurdering basert kun på oppgitt regelverk"
 }`,
   ].join("\n");
@@ -57,12 +57,12 @@ export async function analyzeLegalLinking(input: LegalLinkingInput): Promise<Leg
     validate: (value) => legalLinkingSchema.parse(value),
   });
 
-  const validCodes = new Set(input.availableRules.map((r) => r.rule_code));
+  const validCodes = new Set(input.availableRules.map((r) => r.source_code));
 
   return {
     ...result,
-    claim_rule_links: result.claim_rule_links
+    claim_source_links: result.claim_source_links
       .filter((l) => isValidClaimIndex(input.claims, l.claim_index))
-      .map((l) => ({ ...l, rule_codes: l.rule_codes.filter((code) => validCodes.has(code)) })),
+      .map((l) => ({ ...l, source_codes: l.source_codes.filter((code) => validCodes.has(code)) })),
   };
 }

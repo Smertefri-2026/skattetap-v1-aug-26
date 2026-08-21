@@ -30,12 +30,17 @@ export async function buildKomplettSakReport(
   // before this generation's own insert, or it would diff against itself.
   const changesSinceLast = await computeChangesSinceLast(supabase, caseId);
 
-  const [claimsWithStatus, facts, { data: documents }, { data: taxRules }, { data: latestResponse }] =
+  const [claimsWithStatus, facts, { data: documents }, { data: legalSources }, { data: latestResponse }] =
     await Promise.all([
       getClaimsWithStatus(supabase, caseId),
       getCaseFacts(supabase, caseId),
       supabase.from("documents").select("id, original_filename, ai_extraction").eq("case_id", caseId),
-      supabase.from("tax_rules").select("*"),
+      supabase
+        .from("legal_sources")
+        .select("source_code, law_reference, provision, topic, short_explanation")
+        .eq("source_type", "lov_forskrift")
+        .eq("active", true)
+        .eq("verification_status", "verified"),
       supabase
         .from("skatteetaten_responses")
         .select("interpretation")
@@ -82,8 +87,8 @@ export async function buildKomplettSakReport(
     analyzeLegalLinking({
       caseTitle: caseRow.title,
       claims,
-      availableRules: (taxRules ?? []).map((r) => ({
-        rule_code: r.rule_code,
+      availableRules: (legalSources ?? []).map((r) => ({
+        source_code: r.source_code,
         topic: r.topic,
         short_explanation: r.short_explanation,
       })),
@@ -117,10 +122,23 @@ export async function buildKomplettSakReport(
     );
   }
 
-  const rulesByCode = new Map((taxRules ?? []).map((r) => [r.rule_code, r as RuleReference]));
-  const claimRuleLinks = legalLinking.claim_rule_links.map((l) => ({
+  // RuleReference (reports.content's frozen shape) keeps the rule_code key
+  // regardless of the live column's name, so old and new reports stay
+  // identically shaped -- see reports/types.ts.
+  const rulesByCode = new Map(
+    (legalSources ?? []).map((r) => [
+      r.source_code,
+      {
+        rule_code: r.source_code,
+        law_reference: r.law_reference ?? "",
+        provision: r.provision ?? "",
+        short_explanation: r.short_explanation,
+      } as RuleReference,
+    ])
+  );
+  const claimRuleLinks = legalLinking.claim_source_links.map((l) => ({
     statement: statementFor(claims, l.claim_index),
-    rules: l.rule_codes.map((code) => rulesByCode.get(code)).filter((r): r is RuleReference => !!r),
+    rules: l.source_codes.map((code) => rulesByCode.get(code)).filter((r): r is RuleReference => !!r),
   }));
   const applicableRules = [...new Map(claimRuleLinks.flatMap((l) => l.rules).map((r) => [r.rule_code, r])).values()];
 
