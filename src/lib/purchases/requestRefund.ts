@@ -3,8 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/requireUser";
-import { hasExistingRefundRequest, REFUND_REQUEST_MARKER } from "./refundRequests";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const requestRefundSchema = z.object({
@@ -13,14 +11,14 @@ const requestRefundSchema = z.object({
 });
 
 /**
- * Refund requests reuse the existing contact_messages table (the same one
- * the public contact form writes to) instead of a new refund_requests
- * table -- there is no dedicated support inbox for these yet, so this is
- * a request that lands with staff for manual handling, never an
- * automatic refund. Uses the admin client because contact_messages has no
- * RLS policies for the authenticated role (by design, see its migration);
- * Turnstile is skipped since the caller is already an authenticated user,
- * not an anonymous form submission.
+ * Refund requests live in their own refund_requests table (RLS: a user
+ * can select/insert only their own rows; only admin, through the
+ * service-role client, can change status or add admin_note). No Stripe
+ * refund is issued here -- this only records the request for staff to
+ * act on. A unique constraint on purchase_id means a second request for
+ * the same purchase raises a Postgres unique-violation (23505), which is
+ * treated as success rather than an error -- the customer just lands in
+ * the same "already requested" state either way.
  */
 export async function requestRefund(formData: FormData) {
   const user = await requireUser();
@@ -35,7 +33,7 @@ export async function requestRefund(formData: FormData) {
   const supabase = await createClient();
   const { data: purchase } = await supabase
     .from("purchases")
-    .select("id, user_id, amount_kr, created_at, status, products(name), cases(title)")
+    .select("id, user_id, case_id, status")
     .eq("id", parsed.data.purchaseId)
     .single();
 
@@ -43,37 +41,14 @@ export async function requestRefund(formData: FormData) {
     throw new Error("Fant ikke kjøpet.");
   }
 
-  const admin = createAdminClient();
-  if (await hasExistingRefundRequest(admin, purchase.id)) {
-    // Already requested -- treat as success so the UI just settles into
-    // the same "requested" state instead of surfacing an error for what
-    // isn't really a failure.
-    return;
-  }
-
-  const productName = (purchase.products as unknown as { name: string } | null)?.name ?? "Produkt";
-  const caseTitle = (purchase.cases as unknown as { title: string } | null)?.title ?? "Sak";
-  const kjopsdato = new Date(purchase.created_at).toLocaleDateString("nb-NO");
-
-  const lines = [
-    REFUND_REQUEST_MARKER,
-    `Kjøps-ID: ${purchase.id}`,
-    `Produkt: ${productName}`,
-    `Sak: ${caseTitle}`,
-    `Kjøpt: ${kjopsdato}`,
-    `Beløp: ${purchase.amount_kr} kr`,
-  ];
-  if (parsed.data.note) {
-    lines.push("", "Melding fra kunde:", parsed.data.note);
-  }
-
-  const { error } = await admin.from("contact_messages").insert({
-    name: user.email ?? "Ukjent bruker",
-    email: user.email ?? "",
-    message: lines.join("\n"),
+  const { error } = await supabase.from("refund_requests").insert({
+    user_id: user.id,
+    purchase_id: purchase.id,
+    case_id: purchase.case_id,
+    reason: parsed.data.note ?? null,
   });
 
-  if (error) {
+  if (error && error.code !== "23505") {
     throw new Error("Kunne ikke sende forespørselen. Prøv igjen senere.");
   }
 

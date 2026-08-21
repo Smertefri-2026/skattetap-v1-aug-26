@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CaseCardMenu } from "./CaseCardMenu";
+import { DeleteCaseButton } from "./DeleteCaseButton";
 import { stageLabels } from "@/lib/cases/labels";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,22 +34,27 @@ export async function PapirkurvTab() {
           {cases.map((c) => (
             <li
               key={c.id}
-              className="flex flex-col gap-4 rounded-lg border border-border bg-surface-alt p-5 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-4 rounded-lg border border-border bg-surface-alt p-5"
             >
-              <div className="min-w-0">
-                <p className="truncate text-[14.5px] font-semibold text-ink-soft">{c.title}</p>
-                <p className="mt-1 text-[12.5px] text-ink-faint">
-                  {stageLabels[c.stage as keyof typeof stageLabels]} · Flyttet til papirkurv {formatDate(c.updated_at)}
-                </p>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="truncate text-[14.5px] font-semibold text-ink-soft">{c.title}</p>
+                  <p className="mt-1 text-[12.5px] text-ink-faint">
+                    {stageLabels[c.stage as keyof typeof stageLabels]} · Flyttet til papirkurv {formatDate(c.updated_at)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
+                  <Link
+                    href={`/min-side/saker/${c.id}`}
+                    className="rounded-md border border-border-strong px-3.5 py-2 text-[13px] font-semibold text-ink hover:bg-surface"
+                  >
+                    Åpne sak →
+                  </Link>
+                  <CaseCardMenu caseId={c.id} archived={true} />
+                </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
-                <Link
-                  href={`/min-side/saker/${c.id}`}
-                  className="rounded-md border border-border-strong px-3.5 py-2 text-[13px] font-semibold text-ink hover:bg-surface"
-                >
-                  Åpne sak →
-                </Link>
-                <CaseCardMenu caseId={c.id} archived={true} />
+              <div className="border-t border-border pt-3">
+                <DeleteCaseButton caseId={c.id} caseTitle={c.title} />
               </div>
             </li>
           ))}

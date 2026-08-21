@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth/requireUser";
 import { assertCaseOwnership } from "./assertCaseOwnership";
 import { stageOrder } from "./labels";
 import type { CaseStage } from "./types";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const createCaseSchema = z.object({
@@ -68,5 +69,51 @@ export async function archiveCase(caseId: string) {
 export async function restoreCase(caseId: string) {
   const supabase = await assertCaseOwnership(caseId);
   await supabase.from("cases").update({ status: "apen" }).eq("id", caseId);
+  revalidatePath("/min-side");
+}
+
+const deleteCaseSchema = z.object({
+  caseId: z.string().uuid(),
+  confirmTitle: z.string(),
+});
+
+/**
+ * Irreversible. assertCaseOwnership does the authorization check with the
+ * caller's own session/RLS first; the actual delete then switches to the
+ * admin client on purpose -- most case-child tables (claims, reports,
+ * conversations, ...) have no "delete" RLS policy for the authenticated
+ * role, only documents does, so a cascade delete triggered by a regular
+ * user's session would be blocked partway through by RLS on the other
+ * tables. purchases.case_id is "on delete set null" (see the migration
+ * this round), so purchase/receipt history survives; everything else
+ * cascades away with the case. Storage objects don't cascade with the DB
+ * row, so they're removed explicitly first.
+ */
+export async function deleteCasePermanently(formData: FormData) {
+  const parsed = deleteCaseSchema.safeParse({
+    caseId: formData.get("caseId"),
+    confirmTitle: formData.get("confirmTitle"),
+  });
+  if (!parsed.success) throw new Error("Ugyldig forespørsel.");
+
+  const ownershipCheck = await assertCaseOwnership(parsed.data.caseId);
+  const { data: caseRow } = await ownershipCheck
+    .from("cases")
+    .select("title")
+    .eq("id", parsed.data.caseId)
+    .single();
+  if (!caseRow || caseRow.title !== parsed.data.confirmTitle) {
+    throw new Error("Saksnavnet stemte ikke. Saken ble ikke slettet.");
+  }
+
+  const admin = createAdminClient();
+  const { data: files } = await admin.storage.from("documents").list(parsed.data.caseId);
+  if (files && files.length > 0) {
+    await admin.storage.from("documents").remove(files.map((f) => `${parsed.data.caseId}/${f.name}`));
+  }
+
+  const { error } = await admin.from("cases").delete().eq("id", parsed.data.caseId);
+  if (error) throw new Error("Kunne ikke slette saken.");
+
   revalidatePath("/min-side");
 }

@@ -2,8 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/design-system";
 import type { BadgeTone } from "@/components/design-system";
 import { RefundRequestButton } from "./RefundRequestButton";
-import { getRequestedPurchaseIds } from "@/lib/purchases/refundRequests";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getRefundStatusByPurchaseId } from "@/lib/purchases/refundRequests";
 import { createClient } from "@/lib/supabase/server";
 
 type PurchaseStatus = "pending" | "completed" | "failed" | "canceled" | "refunded";
@@ -34,7 +33,7 @@ export async function KjopTab() {
     .order("created_at", { ascending: false });
 
   const completedIds = (purchases ?? []).filter((p) => p.status === "completed").map((p) => p.id);
-  const requestedIds = await getRequestedPurchaseIds(createAdminClient(), completedIds);
+  const refundStatusByPurchaseId = await getRefundStatusByPurchaseId(supabase, completedIds);
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,19 +56,27 @@ export async function KjopTab() {
             const status = p.status as PurchaseStatus;
             const productName =
               (p.products as unknown as { name: string } | null)?.name ?? "Produkt";
-            const caseTitle =
-              (p.cases as unknown as { title: string } | null)?.title ?? "Sak";
+            const caseTitle = p.case_id ? ((p.cases as unknown as { title: string } | null)?.title ?? "Sak") : "Slettet sak";
             const hasReceipt = p.stripe_checkout_session_id || p.stripe_payment_intent_id;
+            const purchaseInfo = (
+              <>
+                <p className="truncate text-[14.5px] font-semibold text-ink">{productName}</p>
+                <p className="mt-1 text-[12.5px] text-ink-faint">
+                  {caseTitle} · {new Date(p.created_at).toLocaleDateString("nb-NO")}
+                </p>
+              </>
+            );
 
             return (
               <li key={p.id} className="rounded-lg border border-border bg-surface p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-4">
-                  <Link href={`/min-side/saker/${p.case_id}`} className="min-w-0 hover:underline">
-                    <p className="truncate text-[14.5px] font-semibold text-ink">{productName}</p>
-                    <p className="mt-1 text-[12.5px] text-ink-faint">
-                      {caseTitle} · {new Date(p.created_at).toLocaleDateString("nb-NO")}
-                    </p>
-                  </Link>
+                  {p.case_id ? (
+                    <Link href={`/min-side/saker/${p.case_id}`} className="min-w-0 hover:underline">
+                      {purchaseInfo}
+                    </Link>
+                  ) : (
+                    <div className="min-w-0">{purchaseInfo}</div>
+                  )}
                   <div className="flex shrink-0 items-center gap-3">
                     <span className="text-[14px] font-semibold text-ink">
                       {p.amount_kr.toLocaleString("no-NO")} kr
@@ -90,7 +97,7 @@ export async function KjopTab() {
                         Vis kvittering
                       </a>
                     )}
-                    <RefundRequestButton purchaseId={p.id} alreadyRequested={requestedIds.has(p.id)} />
+                    <RefundRequestButton purchaseId={p.id} status={refundStatusByPurchaseId.get(p.id) ?? null} />
                   </div>
                 )}
               </li>

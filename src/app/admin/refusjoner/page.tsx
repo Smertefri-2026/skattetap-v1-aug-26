@@ -1,5 +1,23 @@
 import Link from "next/link";
+import { Badge, Button } from "@/components/design-system";
+import type { BadgeTone } from "@/components/design-system";
 import { listRefundRequests } from "@/lib/admin/queries";
+import { updateRefundRequest } from "@/lib/admin/actions";
+import type { RefundStatus } from "@/lib/purchases/refundRequests";
+
+const STATUS_LABELS: Record<RefundStatus, string> = {
+  open: "Åpen",
+  processing: "Under behandling",
+  approved: "Godkjent",
+  rejected: "Avslått",
+};
+
+const STATUS_TONES: Record<RefundStatus, BadgeTone> = {
+  open: "warning",
+  processing: "info",
+  approved: "success",
+  rejected: "danger",
+};
 
 export default async function AdminRefundsPage() {
   const requests = await listRefundRequests();
@@ -12,55 +30,83 @@ export default async function AdminRefundsPage() {
       </div>
 
       <div className="rounded-lg border border-border-strong bg-surface-alt p-4 text-[12.5px] text-ink-soft">
-        Dette er en synlighetsliste over refusjonsforespørsler fra Min side. Det finnes ennå ingen
-        egen statuskolonne (Åpen / Under behandling / Avslått / Godkjent) -- det krever en liten
-        databaseendring som ikke er godkjent ennå. Håndter forespørslene direkte per e-post
-        inntil videre.
+        Status her endrer kun det interne sporet -- ingen refusjon sendes automatisk til Stripe. Gjennomfør
+        selve refusjonen manuelt i Stripe dashboard, og oppdater status her etterpå.
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-left text-[13px]">
-          <thead className="border-b border-border bg-surface-alt text-[11.5px] uppercase tracking-wide text-ink-faint">
-            <tr>
-              <th className="px-4 py-3 font-semibold">Bruker</th>
-              <th className="px-4 py-3 font-semibold">Sak</th>
-              <th className="px-4 py-3 font-semibold">Produkt</th>
-              <th className="px-4 py-3 font-semibold">Beløp</th>
-              <th className="px-4 py-3 font-semibold">Kjøpsstatus</th>
-              <th className="px-4 py-3 font-semibold">Begrunnelse</th>
-              <th className="px-4 py-3 font-semibold">Forespurt</th>
-            </tr>
-          </thead>
-          <tbody>
-            {requests.map((r) => (
-              <tr key={r.id} className="border-b border-border align-top last:border-0 hover:bg-surface-alt">
-                <td className="px-4 py-3 font-medium text-ink">{r.userEmail}</td>
-                <td className="px-4 py-3 text-ink-soft">
-                  {r.caseId ? (
-                    <Link href={`/admin/saker/${r.caseId}`} className="text-primary-ink hover:underline">
-                      {r.caseTitle}
-                    </Link>
-                  ) : (
-                    r.caseTitle
-                  )}
-                </td>
-                <td className="px-4 py-3 text-ink-soft">{r.productName}</td>
-                <td className="px-4 py-3 text-ink-soft">
-                  {r.amountKr != null ? `${r.amountKr.toLocaleString("no-NO")} kr` : "-"}
-                </td>
-                <td className="px-4 py-3 text-ink-soft">{r.purchaseStatus ?? "-"}</td>
-                <td className="max-w-xs px-4 py-3 text-ink-soft">{r.reason ?? "(ingen begrunnelse oppgitt)"}</td>
-                <td className="px-4 py-3 text-ink-faint">
-                  {new Date(r.requestedAt).toLocaleString("no-NO")}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {requests.length === 0 && (
-          <p className="px-4 py-6 text-[13.5px] text-ink-soft">Ingen refusjonsforespørsler ennå.</p>
-        )}
-      </div>
+      {requests.length === 0 ? (
+        <p className="rounded-lg border border-border bg-surface px-4 py-6 text-[13.5px] text-ink-soft">
+          Ingen refusjonsforespørsler ennå.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {requests.map((r) => (
+            <div key={r.id} className="rounded-lg border border-border bg-surface p-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[13.5px] font-semibold text-ink">{r.userEmail}</p>
+                    <Badge tone={STATUS_TONES[r.status]}>{STATUS_LABELS[r.status]}</Badge>
+                  </div>
+                  <p className="mt-1 text-[12.5px] text-ink-soft">
+                    {r.productName} ·{" "}
+                    {r.caseId ? (
+                      <Link href={`/admin/saker/${r.caseId}`} className="text-primary-ink hover:underline">
+                        {r.caseTitle}
+                      </Link>
+                    ) : (
+                      r.caseTitle
+                    )}{" "}
+                    · {r.amountKr.toLocaleString("no-NO")} kr
+                  </p>
+                  <p className="mt-1 text-[12px] text-ink-faint">
+                    Forespurt {new Date(r.requestedAt).toLocaleString("no-NO")}
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-3 text-[13px] text-ink-soft">
+                <span className="font-medium text-ink">Begrunnelse:</span> {r.reason ?? "(ingen begrunnelse oppgitt)"}
+              </p>
+
+              <form
+                key={r.updatedAt}
+                action={updateRefundRequest}
+                className="mt-4 flex flex-col gap-2.5 border-t border-border pt-3.5 sm:flex-row sm:items-end"
+              >
+                <input type="hidden" name="requestId" value={r.id} />
+                <label className="flex flex-1 flex-col gap-1 text-[12px] font-medium text-ink-soft">
+                  Status
+                  <select
+                    name="status"
+                    defaultValue={r.status}
+                    className="rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-ink"
+                  >
+                    {(Object.keys(STATUS_LABELS) as RefundStatus[]).map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-[2] flex-col gap-1 text-[12px] font-medium text-ink-soft">
+                  Intern merknad
+                  <input
+                    type="text"
+                    name="adminNote"
+                    defaultValue={r.adminNote ?? ""}
+                    placeholder="Kun synlig for admin"
+                    className="rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-ink"
+                  />
+                </label>
+                <Button type="submit" variant="secondary">
+                  Lagre
+                </Button>
+              </form>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

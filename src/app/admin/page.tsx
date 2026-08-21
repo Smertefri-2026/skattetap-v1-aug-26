@@ -32,7 +32,7 @@ export default async function AdminOverviewPage() {
           )}
         </Card>
         <Card>
-          <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">Refusjoner</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-faint">Åpne refusjoner</p>
           <p className="mt-2 text-[26px] font-semibold text-ink">{overview.refundRequestCount}</p>
           {overview.refundRequestCount > 0 && (
             <Link href="/admin/refusjoner" className="mt-1 inline-block text-[12.5px] text-primary-ink hover:underline">
