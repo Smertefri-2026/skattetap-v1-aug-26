@@ -94,10 +94,22 @@ export async function getCaseCapacity(supabase: SupabaseClient, caseId: string):
   };
 }
 
-/** Server-side gate for one more upload of a given size -- the real
+/**
+ * Server-side gate for one more upload of a given size -- the real
  * enforcement, checked right before any extraction/AI call, not just a UI
  * hint. Re-derives capacity fresh rather than trusting a client-supplied
- * count, since the client-side display is informational only. */
+ * count, since the client-side display is informational only.
+ *
+ * TODO(race condition, not solved here): this check and the document
+ * insert it gates are not one atomic transaction. Two uploads for the
+ * same case landing in this function within the same moment near the
+ * limit could both read "allowed" before either has inserted its
+ * document row. Correct for the ordinary case (uploads arrive one at a
+ * time), not guaranteed under real concurrency. Fixing this properly
+ * needs a database-level lock or a capacity-checking function run inside
+ * the same transaction as the insert -- deliberately not built until
+ * there's an actual case of it happening, not preemptively now.
+ */
 export async function checkUploadAllowed(
   supabase: SupabaseClient,
   caseId: string,

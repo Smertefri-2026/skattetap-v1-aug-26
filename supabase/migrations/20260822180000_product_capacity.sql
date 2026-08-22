@@ -23,8 +23,33 @@ update public.products set max_documents = 50, max_total_mb = 300 where product_
 -- Stripe) -- but its capacity numbers belong in the same single table as
 -- every other tier's, not hardcoded as a fallback constant in code.
 -- sort_order 0 keeps it first without colliding with the existing 1-4.
+-- Upsert, not a plain insert: confirmed via a live query that no
+-- enkel-sjekk row exists yet, but this stays safe against a re-run or a
+-- row someone adds by hand before this migration lands.
 insert into public.products (product_code, name, price_kr, sort_order, product_type, max_documents, max_total_mb, active)
-values ('enkel-sjekk', 'Enkel sjekk', 0, 0, 'tier', 3, 15, true);
+values ('enkel-sjekk', 'Enkel sjekk', 0, 0, 'tier', 3, 15, true)
+on conflict (product_code) do update set
+  max_documents = excluded.max_documents,
+  max_total_mb = excluded.max_total_mb,
+  product_type = excluded.product_type;
+
+-- Capacity add-ons. sort_order 100/101 -- deliberately far outside the
+-- tier ladder's 0-4 range, since these never participate in
+-- tier-inheritance/entitlement (they never get a case_access row -- see
+-- case_capacity_purchases below). Customer-facing names are the analysis
+-- capacity itself, never "MB". No max_documents/max_total_mb: those are a
+-- tier concept, add-ons only ever contribute via addon_documents/
+-- addon_total_mb.
+insert into public.products (product_code, name, price_kr, sort_order, product_type, addon_documents, addon_total_mb, active)
+values
+  ('kapasitet-liten', 'Ekstra analysekapasitet', 299, 100, 'capacity_addon', 10, 100, true),
+  ('kapasitet-stor', 'Stor analysekapasitet', 599, 101, 'capacity_addon', 25, 250, true)
+on conflict (product_code) do update set
+  price_kr = excluded.price_kr,
+  addon_documents = excluded.addon_documents,
+  addon_total_mb = excluded.addon_total_mb,
+  product_type = excluded.product_type,
+  active = excluded.active;
 
 -- Capacity add-on purchases. Deliberately NOT case_access: case_access has
 -- unique(case_id, product_code) with ignoreDuplicates on grant, which is

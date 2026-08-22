@@ -99,7 +99,11 @@ describe("createCheckoutSession", () => {
       addon_total_mb: 100,
     });
 
-    const createSession = vi.fn(() => Promise.resolve({ id: "sess-1", url: "https://checkout.stripe.com/sess-1" }));
+    type SessionCreateArgs = { line_items: { price_data: { unit_amount: number } }[] };
+    const createSession = vi.fn((args: SessionCreateArgs) => {
+      void args;
+      return Promise.resolve({ id: "sess-1", url: "https://checkout.stripe.com/sess-1" });
+    });
     getStripeClient.mockReturnValue({ checkout: { sessions: { create: createSession } } });
 
     const url = await createCheckoutSession({

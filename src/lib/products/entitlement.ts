@@ -8,6 +8,12 @@ import type { Product } from "./types";
  * lower sort_order (tier inheritance), the case's entitlement is fully
  * described by its single highest-ranked purchase -- no separate "includes"
  * list needed anywhere.
+ *
+ * Reads only case_access, never case_capacity_purchases -- capacity add-ons
+ * never write a case_access row (see the Stripe webhook's
+ * grantPurchasedProduct), so a case's entitlement.price_kr here is always
+ * a tier price alone. This is what keeps getUpgradeQuote's mellomlegg
+ * correct below: add-on spend can never leak into it.
  */
 export async function getCaseEntitlement(
   supabase: SupabaseClient,
@@ -45,8 +51,10 @@ export interface UpgradeQuote {
   costKr: number;
 }
 
-/** costKr is always the difference between the target price and whatever
- * the case has already paid for -- never the full price on an upgrade. */
+/** costKr is always the difference between the target tier's price and
+ * whatever tier the case has already paid for -- never the full price on
+ * an upgrade, and never reduced by capacity add-on spend (entitlement.
+ * price_kr above can only ever be a tier price -- see getCaseEntitlement). */
 export async function getUpgradeQuote(
   supabase: SupabaseClient,
   caseId: string,
