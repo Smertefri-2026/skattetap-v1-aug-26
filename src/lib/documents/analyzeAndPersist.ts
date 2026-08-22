@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { analyzeDocument, type DocumentExtraction } from "@/lib/ai/documentExtraction";
+import { refreshNextAction } from "@/lib/cases/refreshNextAction";
+import { runLegalAnalysis } from "@/lib/legal/runLegalAnalysis";
+import { getCaseAnalysisProfile } from "@/lib/products/analysisProfile";
 import { runDocumentCaseAnalysis } from "./runCaseAnalysis";
 
 export interface AnalyzeAndPersistInput {
@@ -140,20 +143,26 @@ export async function analyzeAndPersistDocument(
       .update({ extraction_status: "done", rejection_reason: null })
       .eq("id", input.documentId);
 
-    // allFactsSaved just confirmed none of these are null; the filter only
-    // re-establishes that for the type checker, order preserved throughout.
-    const confirmedClaimIds = ownClaimIds.filter((id): id is string => id !== null);
-
-    // Best-effort by design (see runCaseAnalysis.ts) -- a failure here
-    // never throws, so it can't land in this function's catch block.
-    await runDocumentCaseAnalysis(supabase, {
-      caseId: input.caseId,
-      documentId: input.documentId,
-      fileName: input.fileName,
-      extraction,
-      ownClaimIds: confirmedClaimIds,
-      userId: input.userId,
-    });
+    // The orchestration point: the AI engines themselves (documentCase-
+    // AnalysisEngine, legalQuestionEngine, legalSourceAnalysisEngine) never
+    // know about products or tiers -- this is the one place that looks up
+    // the case's analysis profile and decides what runs. Legal analysis
+    // and next-action always run; full cross-document case analysis
+    // (conflicts/gaps/credibility) only runs when the profile includes it.
+    // All three are best-effort by design -- none of them throw, so none
+    // of this can land in this function's own catch block.
+    const profile = await getCaseAnalysisProfile(supabase, input.caseId);
+    if (profile.runsCaseAnalysis) {
+      await runDocumentCaseAnalysis(supabase, {
+        caseId: input.caseId,
+        documentId: input.documentId,
+        fileName: input.fileName,
+        extraction,
+        userId: input.userId,
+      }).catch(() => null);
+    }
+    await runLegalAnalysis(supabase, input.caseId, input.userId).catch(() => {});
+    await refreshNextAction(supabase, input.caseId, input.userId);
 
     return { status: "done", rejectionReason: null, claimsCreated };
   } catch {

@@ -6,6 +6,15 @@ vi.mock("@/lib/ai/documentExtraction", () => ({ analyzeDocument }));
 const { runDocumentCaseAnalysis } = vi.hoisted(() => ({ runDocumentCaseAnalysis: vi.fn() }));
 vi.mock("./runCaseAnalysis", () => ({ runDocumentCaseAnalysis }));
 
+const { runLegalAnalysis } = vi.hoisted(() => ({ runLegalAnalysis: vi.fn() }));
+vi.mock("@/lib/legal/runLegalAnalysis", () => ({ runLegalAnalysis }));
+
+const { refreshNextAction } = vi.hoisted(() => ({ refreshNextAction: vi.fn() }));
+vi.mock("@/lib/cases/refreshNextAction", () => ({ refreshNextAction }));
+
+const { getCaseAnalysisProfile } = vi.hoisted(() => ({ getCaseAnalysisProfile: vi.fn() }));
+vi.mock("@/lib/products/analysisProfile", () => ({ getCaseAnalysisProfile }));
+
 const { analyzeAndPersistDocument, clearDocumentAnalysisArtifacts } = await import("./analyzeAndPersist");
 
 function makeFakeSupabase(singleResponses: Record<string, unknown[]>) {
@@ -62,10 +71,13 @@ const extraction = {
 beforeEach(() => {
   analyzeDocument.mockReset();
   runDocumentCaseAnalysis.mockReset();
+  runLegalAnalysis.mockReset().mockResolvedValue(undefined);
+  refreshNextAction.mockReset().mockResolvedValue(undefined);
+  getCaseAnalysisProfile.mockReset().mockResolvedValue({ profile: "standard", runsCaseAnalysis: true });
 });
 
 describe("analyzeAndPersistDocument", () => {
-  it("oppretter claims, evidence_links og assessments for hvert fakta, og kjører saksanalysen med alle claim-id-ene", async () => {
+  it("oppretter claims, evidence_links og assessments for hvert fakta, og kjører saksanalyse + rettsanalyse + neste-handling", async () => {
     analyzeDocument.mockResolvedValue(extraction);
     runDocumentCaseAnalysis.mockResolvedValue(null);
 
@@ -94,10 +106,33 @@ describe("analyzeAndPersistDocument", () => {
     expect(docUpdate).toBeDefined();
 
     expect(runDocumentCaseAnalysis).toHaveBeenCalledTimes(1);
-    expect(runDocumentCaseAnalysis.mock.calls[0][1]).toMatchObject({
-      documentId: "doc-1",
-      ownClaimIds: ["claim-1", "claim-2"],
+    expect(runDocumentCaseAnalysis.mock.calls[0][1]).toMatchObject({ documentId: "doc-1" });
+    expect(runLegalAnalysis).toHaveBeenCalledTimes(1);
+    expect(refreshNextAction).toHaveBeenCalledTimes(1);
+  });
+
+  it("hopper over full saksanalyse på 'basic'-profil, men kjører rettsanalyse og neste-handling likevel", async () => {
+    analyzeDocument.mockResolvedValue(extraction);
+    getCaseAnalysisProfile.mockResolvedValue({ profile: "basic", runsCaseAnalysis: false });
+
+    const { client } = makeFakeSupabase({
+      claims: [
+        { data: { id: "claim-1" }, error: null },
+        { data: { id: "claim-2" }, error: null },
+      ],
     });
+
+    const result = await analyzeAndPersistDocument(client, {
+      caseId: "case-1",
+      documentId: "doc-1",
+      fileName: "lonnsslipp.pdf",
+      extractedText: "innhold",
+    });
+
+    expect(result.status).toBe("done");
+    expect(runDocumentCaseAnalysis).not.toHaveBeenCalled();
+    expect(runLegalAnalysis).toHaveBeenCalledTimes(1);
+    expect(refreshNextAction).toHaveBeenCalledTimes(1);
   });
 
   it("ruller tilbake og markerer dokumentet feilet når KI-analysen kaster, uten å kjøre saksanalyse", async () => {

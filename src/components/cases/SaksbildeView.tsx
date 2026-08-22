@@ -1,5 +1,6 @@
 import { Badge } from "@/components/design-system";
 import { CapacityStatus, type CapacityAddonOption } from "./CapacityStatus";
+import { CatchUpAnalysisTrigger } from "./CatchUpAnalysisTrigger";
 import { ClaimsList } from "./ClaimsList";
 import { CaseTimelineView } from "./CaseTimelineView";
 import { ConflictWorkspace } from "./ConflictWorkspace";
@@ -15,6 +16,7 @@ import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
 import { statusLabels, statusTones } from "@/lib/cases/labels";
 import { buildCaseTimeline } from "@/lib/cases/timeline";
 import type { Case } from "@/lib/cases/types";
+import { getCaseAnalysisProfile } from "@/lib/products/analysisProfile";
 import { getCaseCapacity } from "@/lib/products/capacity";
 import { getCaseEntitlement } from "@/lib/products/entitlement";
 import { createClient } from "@/lib/supabase/server";
@@ -59,6 +61,10 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
 
   const timeline = await buildCaseTimeline(supabase, caseData.id, caseData.tax_period);
   const capacity = await getCaseCapacity(supabase, caseData.id);
+  const analysisProfile = await getCaseAnalysisProfile(supabase, caseData.id);
+  const needsCatchUpAnalysis =
+    analysisProfile.runsCaseAnalysis &&
+    (documents ?? []).some((d) => d.extraction_status === "done" && d.case_analysis === null);
 
   let addonOptions: CapacityAddonOption[] = [];
   if (capacity.canBuyExtraCapacity) {
@@ -131,6 +137,8 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
           </div>
         </div>
       </section>
+
+      {needsCatchUpAnalysis && <CatchUpAnalysisTrigger caseId={caseData.id} />}
 
       <section id="saksbehandler" className="scroll-mt-24">
         <SaksbehandlerTab caseData={caseData} />

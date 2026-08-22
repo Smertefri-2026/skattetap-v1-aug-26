@@ -2,6 +2,7 @@ export type PriceType = "one_time" | "recurring";
 export type BillingInterval = "month" | "year";
 export type ProductScope = "case" | "account";
 export type ProductType = "tier" | "capacity_addon";
+export type AnalysisProfile = "basic" | "standard";
 
 export interface Product {
   product_code: string;
@@ -22,4 +23,6 @@ export interface Product {
    * purchased, on top of whatever the case's tier already includes. */
   addon_documents: number | null;
   addon_total_mb: number | null;
+  /** Set only on product_type "tier" -- see analysisProfile.ts. */
+  analysis_profile: AnalysisProfile;
 }
