@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/requireUser";
 import { processDocumentUpload } from "@/lib/documents/processUpload";
+import { checkUploadAllowed } from "@/lib/products/capacity";
 import { createClient } from "@/lib/supabase/server";
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
@@ -32,6 +33,15 @@ export async function POST(
 
   if (file.size > MAX_FILE_BYTES) {
     return NextResponse.json({ error: "Filen er for stor (maks 20 MB)." }, { status: 400 });
+  }
+
+  // Checked before any extraction/AI call starts -- the expensive part of
+  // this request must never run once the case's included capacity is
+  // used up. The frontend also disables the upload button at the limit,
+  // but that's UX only; this is the actual gate.
+  const capacityCheck = await checkUploadAllowed(supabase, caseId, file.size);
+  if (!capacityCheck.allowed) {
+    return NextResponse.json({ error: capacityCheck.reason }, { status: 402 });
   }
 
   try {

@@ -4,7 +4,16 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/design-system";
 
-export function DocumentUploadForm({ caseId }: { caseId: string }) {
+export function DocumentUploadForm({
+  caseId,
+  disabledReason,
+}: {
+  caseId: string;
+  /** Set when the case has used its included capacity -- the button stays
+   * disabled with this text instead of allowing a click that the server
+   * would reject anyway. Informational only; the real gate is server-side. */
+  disabledReason?: string;
+}) {
   const [status, setStatus] = useState<"idle" | "uploading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,11 +59,14 @@ export function DocumentUploadForm({ caseId }: { caseId: string }) {
       <Button
         type="button"
         variant="secondary"
-        disabled={status === "uploading"}
+        disabled={status === "uploading" || !!disabledReason}
         onClick={() => inputRef.current?.click()}
       >
         {status === "uploading" ? "Laster opp og analyserer..." : "Last opp dokument (PDF)"}
       </Button>
+      {disabledReason && status !== "uploading" && (
+        <p className="text-[12.5px] text-ink-faint">{disabledReason}</p>
+      )}
       {error && <p className="text-[13px] text-danger-ink">{error}</p>}
     </div>
   );

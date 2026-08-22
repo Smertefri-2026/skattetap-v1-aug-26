@@ -1,6 +1,38 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { getProductByCode } from "@/lib/products/catalog";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripeClient } from "@/lib/stripe/client";
+
+/**
+ * A tier unlocks a workbench and is never re-granted (case_access,
+ * unique per case+product, upsert-ignore-duplicates). A capacity add-on
+ * grants no workbench and must stack across repeat purchases, so it goes
+ * to a different table entirely (case_capacity_purchases, plain insert,
+ * no uniqueness) instead of forcing case_access to serve two purposes.
+ */
+async function grantPurchasedProduct(
+  supabase: SupabaseClient,
+  params: { caseId: string; productCode: string; purchaseId: string }
+): Promise<void> {
+  const product = await getProductByCode(supabase, params.productCode);
+
+  if (product?.product_type === "capacity_addon") {
+    await supabase.from("case_capacity_purchases").insert({
+      case_id: params.caseId,
+      product_code: params.productCode,
+      purchase_id: params.purchaseId,
+    });
+    return;
+  }
+
+  await supabase
+    .from("case_access")
+    .upsert(
+      { case_id: params.caseId, product_code: params.productCode, purchase_id: params.purchaseId },
+      { onConflict: "case_id,product_code", ignoreDuplicates: true }
+    );
+}
 
 /**
  * Sole source of truth for case_access. The client never grants itself
@@ -52,12 +84,7 @@ export async function POST(req: Request) {
           })
           .eq("id", purchaseId);
 
-        await supabase
-          .from("case_access")
-          .upsert(
-            { case_id: caseId, product_code: productCode, purchase_id: purchaseId },
-            { onConflict: "case_id,product_code", ignoreDuplicates: true }
-          );
+        await grantPurchasedProduct(supabase, { caseId, productCode, purchaseId });
       }
     }
   }
@@ -102,12 +129,7 @@ export async function POST(req: Request) {
           })
           .eq("id", purchaseId);
 
-        await supabase
-          .from("case_access")
-          .upsert(
-            { case_id: caseId, product_code: productCode, purchase_id: purchaseId },
-            { onConflict: "case_id,product_code", ignoreDuplicates: true }
-          );
+        await grantPurchasedProduct(supabase, { caseId, productCode, purchaseId });
       }
     }
   }

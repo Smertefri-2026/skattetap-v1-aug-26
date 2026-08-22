@@ -68,27 +68,32 @@ export function CaseContextPanel({
             const done = i < activeIndex;
             const current = i === activeIndex;
             return (
-              <li key={stage} className="flex items-center gap-2.5">
-                <span
-                  className={
-                    current
-                      ? "flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white"
-                      : done
-                        ? "flex h-5 w-5 items-center justify-center rounded-full bg-success text-[10px] font-semibold text-white"
-                        : "flex h-5 w-5 items-center justify-center rounded-full bg-neutral-subtle text-[10px] font-semibold text-ink-faint"
-                  }
+              <li key={stage}>
+                <Link
+                  href={`/min-side/saker/${caseData.id}?steg=${stage}`}
+                  className="flex items-center gap-2.5 hover:opacity-80"
                 >
-                  {done ? "✓" : i + 1}
-                </span>
-                <span
-                  className={
-                    current
-                      ? "text-[13px] font-semibold text-ink"
-                      : "text-[13px] text-ink-soft"
-                  }
-                >
-                  {stageLabels[stage]}
-                </span>
+                  <span
+                    className={
+                      current
+                        ? "flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white"
+                        : done
+                          ? "flex h-5 w-5 items-center justify-center rounded-full bg-success text-[10px] font-semibold text-white"
+                          : "flex h-5 w-5 items-center justify-center rounded-full bg-neutral-subtle text-[10px] font-semibold text-ink-faint"
+                    }
+                  >
+                    {done ? "✓" : i + 1}
+                  </span>
+                  <span
+                    className={
+                      current
+                        ? "text-[13px] font-semibold text-ink"
+                        : "text-[13px] text-ink-soft"
+                    }
+                  >
+                    {stageLabels[stage]}
+                  </span>
+                </Link>
               </li>
             );
           })}

@@ -1,4 +1,5 @@
 import { Badge } from "@/components/design-system";
+import { CapacityStatus, type CapacityAddonOption } from "./CapacityStatus";
 import { ClaimsList } from "./ClaimsList";
 import { CaseTimelineView } from "./CaseTimelineView";
 import { ConflictWorkspace } from "./ConflictWorkspace";
@@ -14,6 +15,7 @@ import { getClaimsWithStatus } from "@/lib/cases/claimsWithStatus";
 import { statusLabels, statusTones } from "@/lib/cases/labels";
 import { buildCaseTimeline } from "@/lib/cases/timeline";
 import type { Case } from "@/lib/cases/types";
+import { getCaseCapacity } from "@/lib/products/capacity";
 import { getCaseEntitlement } from "@/lib/products/entitlement";
 import { createClient } from "@/lib/supabase/server";
 
@@ -56,6 +58,23 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
   ]);
 
   const timeline = await buildCaseTimeline(supabase, caseData.id, caseData.tax_period);
+  const capacity = await getCaseCapacity(supabase, caseData.id);
+
+  let addonOptions: CapacityAddonOption[] = [];
+  if (capacity.canBuyExtraCapacity) {
+    const { data: addonProducts } = await supabase
+      .from("products")
+      .select("product_code, name, price_kr, addon_documents, addon_total_mb")
+      .eq("product_type", "capacity_addon")
+      .eq("active", true);
+    addonOptions = (addonProducts ?? []).map((p) => ({
+      productCode: p.product_code as string,
+      name: p.name as string,
+      priceKr: p.price_kr as number,
+      addonDocuments: (p.addon_documents as number | null) ?? 0,
+      addonTotalMb: (p.addon_total_mb as number | null) ?? 0,
+    }));
+  }
 
   const documented = claims.filter((c) => c.status === "documented").length;
   const conflicting = claims.filter((c) => c.status === "conflicting").length;
@@ -124,7 +143,27 @@ export async function SaksbildeView({ caseData }: { caseData: Case }) {
           vurderingen av saken.
         </p>
         <div className="mt-4">
-          <DocumentUploadForm caseId={caseData.id} />
+          <CapacityStatus
+            caseId={caseData.id}
+            currentStage={capacity.currentTier.product_code as Case["stage"]}
+            documentsUsed={capacity.documentsUsed}
+            maxDocuments={capacity.maxDocuments}
+            mbUsed={capacity.mbUsed}
+            maxTotalMb={capacity.maxTotalMb}
+            status={capacity.status}
+            recommendedUpgradeStage={capacity.recommendedUpgradeStage}
+            addonOptions={addonOptions}
+          />
+        </div>
+        <div className="mt-4">
+          <DocumentUploadForm
+            caseId={caseData.id}
+            disabledReason={
+              capacity.status === "limit_reached"
+                ? "Dokumentkapasiteten som inngår i saken er brukt opp."
+                : undefined
+            }
+          />
         </div>
         <div className="mt-4">
           <DocumentInsightList documents={documents ?? []} caseId={caseData.id} />

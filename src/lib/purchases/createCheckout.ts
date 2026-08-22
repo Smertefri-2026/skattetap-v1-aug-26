@@ -1,3 +1,4 @@
+import { getProductByCode } from "@/lib/products/catalog";
 import { getUpgradeQuote } from "@/lib/products/entitlement";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripeClient } from "@/lib/stripe/client";
@@ -32,18 +33,31 @@ export interface CreateCheckoutInput {
  */
 export async function createCheckoutSession(input: CreateCheckoutInput): Promise<string> {
   const supabase = createAdminClient();
-  const quote = await getUpgradeQuote(supabase, input.caseId, input.productCode);
-  if (!quote) throw new Error("Ukjent produkt.");
-  if (quote.alreadyHasAccess) {
-    throw new Error("Du har allerede tilgang til dette nivået eller høyere.");
-  }
+  const product = await getProductByCode(supabase, input.productCode);
+  if (!product) throw new Error("Ukjent produkt.");
+
   // Case-scoped, one-time checkout is all this flow implements today. A
   // future Skattetap+ subscription is account-scoped and recurring, which
   // needs its own checkout mode and its own (not yet built) entitlement
   // table -- this guard is the explicit point where that branches off,
   // instead of this flow silently mishandling a recurring/account product.
-  if (quote.product.price_type !== "one_time" || quote.product.scope !== "case") {
+  if (product.price_type !== "one_time" || product.scope !== "case") {
     throw new Error("Dette produktet støttes ikke i denne kjøpsflyten ennå.");
+  }
+
+  let costKr: number;
+  if (product.product_type === "capacity_addon") {
+    // Add-ons are bought at full price and can be purchased more than once
+    // on the same case -- "already has access" is a tier concept that
+    // doesn't apply here (see case_capacity_purchases).
+    costKr = product.price_kr;
+  } else {
+    const quote = await getUpgradeQuote(supabase, input.caseId, input.productCode);
+    if (!quote) throw new Error("Ukjent produkt.");
+    if (quote.alreadyHasAccess) {
+      throw new Error("Du har allerede tilgang til dette nivået eller høyere.");
+    }
+    costKr = quote.costKr;
   }
 
   const stripe = getStripeClient();
@@ -70,7 +84,7 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
       case_id: input.caseId,
       user_id: input.userId,
       product_code: input.productCode,
-      amount_kr: quote.costKr,
+      amount_kr: costKr,
       idempotency_key: crypto.randomUUID(),
       status: "pending",
       angrerett_accepted_at: input.angrerettAccepted ? new Date().toISOString() : null,
@@ -87,8 +101,8 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
         {
           price_data: {
             currency: "nok",
-            product_data: { name: quote.product.name },
-            unit_amount: quote.costKr * 100,
+            product_data: { name: product.name },
+            unit_amount: costKr * 100,
           },
           quantity: 1,
         },
